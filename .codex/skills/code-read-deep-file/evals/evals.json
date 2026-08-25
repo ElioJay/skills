@@ -1,0 +1,54 @@
+{
+  "skill_name": "code-read-deep-file",
+  "evals": [
+    {
+      "id": 0,
+      "name": "java-orderservice-file",
+      "prompt": "读一下 OrderService.java 这个文件是干嘛的，给我一份文件级阅读报告，含结构图和依赖图。",
+      "expected_output": "一份中文文件阅读报告，含 9 段固定结构（定位/职责概述/构成清单 Outline/对外接口/内部结构与协作/依赖与消费方/关键数据与状态/重点方法选读/问题）与两张 Mermaid 图（① 结构图 classDiagram、② 依赖关系图 flowchart LR）。定位含文件路径/语言/LOC/包/分层角色。构成清单应列全 OrderService 类内的方法（含 createOrder 及其它方法/字段），每项带 file:line 与一句话定位。依赖与消费方应标出 userService、inventoryClient（外部 HTTP）、orderDao（DB）等依赖。重点方法选读只挑 1~3 个关键成员（如 createOrder）做中等深度，并附『深挖 → code-read-deep-function OrderService.createOrder』委派标注，而非把每个方法都深挖。问题段应抓出逻辑硬伤：user 可能为 null 致 getProfile() NPE、忽略 inventoryClient.lock 返回值即落库致超卖、空 catch 吞 insert 异常。不应报告命名/性能/风格类问题，不应退化成逐方法完整调用链追踪。",
+      "files": ["evals/fixtures/OrderService.java"]
+    },
+    {
+      "id": 1,
+      "name": "python-paymentservice-file",
+      "prompt": "梳理 payment_service.py 整个文件的结构和依赖，画个结构图和依赖图，顺便看看有没有明显问题。",
+      "expected_output": "中文文件阅读报告 9 段 + 两张 Mermaid 图。构成清单应列全文件内的类与顶层函数/常量（Python 一个文件可能含多个），每项带 file:line。依赖与消费方应标出 refund_dao、gateway（外部 HTTP）等。重点方法选读挑 1~3 个（如 refund）中等深度并附『深挖 → code-read-deep-function』委派。问题段应抓出：空 except 吞网关异常、无论网关结果恒返回 True 且未回写退款单状态致状态不一致。不应报告风格/性能问题，不应对每个函数都做完整调用链追踪。",
+      "files": ["evals/fixtures/payment_service.py"]
+    },
+    {
+      "id": 2,
+      "name": "scope-guard-方法入口应改道",
+      "prompt": "从 OrderService.createOrder 梳理调用关系，给我逻辑调用图和数据流图。",
+      "expected_output": "不产出文件级报告。应识别用户给的是单个方法入口（类名.方法名），属于方法级深挖，明确引导改用 code-read-deep-function（读 OrderService.createOrder），并说明若想读整个文件再提供文件名。验证方法入口改道闸门生效。",
+      "files": ["evals/fixtures/OrderService.java"]
+    },
+    {
+      "id": 3,
+      "name": "scope-guard-整目录应拒绝",
+      "prompt": "把 src/order 这个目录下的代码帮我通读一遍，讲讲整体结构。",
+      "expected_output": "不产出报告。应识别这是整目录/整模块通读、超出本 skill 范围，明确要求用户收敛到单个文件（路径或文件名，例如 OrderService.java），或提示此请求不适用 code-read-deep-file。验证范围闸门生效。",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "go-orderhandler-file",
+      "prompt": "读一下 order_handler.go 这个文件是干嘛的，给我一份文件级阅读报告，含结构图和依赖图。",
+      "expected_output": "中文文件阅读报告 9 段 + 两张 Mermaid 图（① 结构图、② 依赖关系图 flowchart LR）。定位含文件路径/语言 Go/LOC/package（order）/分层角色。构成清单应列全文件内构件：OrderHandler 结构体及其字段（inv/users/orderDao）、构造器 NewOrderHandler、方法 Create，每项带 file:line 与一句话定位。依赖与消费方应标出 inventory.Client（外部库存系统 HTTP）、user.Repository（用户服务）、OrderDao（DB）。重点方法选读挑 1~3 个关键成员（如 Create）做中等深度，并附『深挖 → code-read-deep-function order.OrderHandler.Create』委派标注，而非逐方法深挖。问题段应抓出逻辑硬伤：h.inv.Lock(skuId, qty) 的 error 返回值被忽略，锁库存失败仍继续落库，可能超卖。不应报告命名/性能/风格问题，不应退化成逐方法完整调用链追踪。",
+      "files": ["evals/fixtures/order_handler.go"]
+    },
+    {
+      "id": 5,
+      "name": "csharp-orderservice-file",
+      "prompt": "梳理 OrderService.cs 整个文件的结构和依赖，画个结构图和依赖图，顺便看看有没有明显问题。",
+      "expected_output": "中文文件阅读报告 9 段 + 两张 Mermaid 图。定位含文件路径/语言 C#/LOC/namespace（Example.Shop.Order）/分层角色。构成清单应列全文件内构件：OrderService 类、三个 DI 字段（_userService/_inventory/_orderRepository）、构造器、公共方法 Create，每项带 file:line。依赖与消费方应标出 IUserService（用户服务）、IInventoryClient（外部库存系统 HTTP）、IOrderRepository（DB），并体现构造器注入（DI）。重点方法选读挑 1~3 个（如 Create）中等深度并附『深挖 → code-read-deep-function OrderService.Create』委派。问题段应抓出逻辑硬伤：user.Profile.Name 链式取值未判空，user 或 user.Profile 为 null 时抛 NullReferenceException。不应报告风格/性能问题，不应对每个成员都做完整调用链追踪。",
+      "files": ["evals/fixtures/OrderService.cs"]
+    },
+    {
+      "id": 6,
+      "name": "kotlin-orderservice-file",
+      "prompt": "OrderService.kt 里都有哪些类和方法、依赖谁又被谁用，给我一份文件级阅读报告并出结构图和依赖图。",
+      "expected_output": "中文文件阅读报告 9 段 + 两张 Mermaid 图。定位含文件路径/语言 Kotlin/LOC/package（com.example.shop.order）/分层角色。构成清单应列全文件内构件：OrderService 类、主构造器中的三个 val 依赖（userService/inventoryClient/orderDao）、方法 create，每项带 file:line。依赖与消费方应标出 UserService（用户服务）、InventoryClient（外部库存系统 HTTP）、OrderDao（DB）。重点方法选读挑 1~3 个（如 create）中等深度并附『深挖 → code-read-deep-function OrderService.create』委派。问题段应抓出逻辑硬伤：inventoryClient.lock 外层 try/catch 为空 catch 吞掉异常，锁库存失败仍继续落库，可能超卖（user.profile.name 亦未判空可作次要提示）。不应报告命名/风格/性能问题，不应退化成逐方法完整调用链追踪。",
+      "files": ["evals/fixtures/OrderService.kt"]
+    }
+  ]
+}

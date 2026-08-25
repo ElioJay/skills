@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Set Review - vibe-coding-workflow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Lora', Georgia, serif; background: #faf9f5; padding: 2rem; color: #141413; }
+    h1 { font-family: 'Poppins', sans-serif; margin-bottom: 0.5rem; font-size: 1.5rem; }
+    .description { color: #b0aea5; margin-bottom: 1.5rem; font-style: italic; max-width: 900px; }
+    .controls { margin-bottom: 1rem; display: flex; gap: 0.5rem; }
+    .btn { font-family: 'Poppins', sans-serif; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 500; }
+    .btn-add { background: #6a9bcc; color: white; }
+    .btn-add:hover { background: #5889b8; }
+    .btn-export { background: #d97757; color: white; }
+    .btn-export:hover { background: #c4613f; }
+    table { width: 100%; max-width: 1100px; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    th { font-family: 'Poppins', sans-serif; background: #141413; color: #faf9f5; padding: 0.75rem 1rem; text-align: left; font-size: 0.875rem; }
+    td { padding: 0.75rem 1rem; border-bottom: 1px solid #e8e6dc; vertical-align: top; }
+    tr:nth-child(even) td { background: #faf9f5; }
+    tr:hover td { background: #f3f1ea; }
+    .section-header td { background: #e8e6dc; font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 0.8rem; color: #141413; text-transform: uppercase; letter-spacing: 0.05em; }
+    .query-input { width: 100%; padding: 0.4rem; border: 1px solid #e8e6dc; border-radius: 4px; font-size: 0.875rem; font-family: 'Lora', Georgia, serif; resize: vertical; min-height: 60px; }
+    .query-input:focus { outline: none; border-color: #d97757; box-shadow: 0 0 0 2px rgba(217,119,87,0.15); }
+    .toggle { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle .slider { position: absolute; inset: 0; background: #b0aea5; border-radius: 24px; cursor: pointer; transition: 0.2s; }
+    .toggle .slider::before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.2s; }
+    .toggle input:checked + .slider { background: #d97757; }
+    .toggle input:checked + .slider::before { transform: translateX(20px); }
+    .btn-delete { background: #c44; color: white; padding: 0.3rem 0.6rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-family: 'Poppins', sans-serif; }
+    .btn-delete:hover { background: #a33; }
+    .summary { margin-top: 1rem; color: #b0aea5; font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+  <h1>Eval Set Review: <span id="skill-name">vibe-coding-workflow</span></h1>
+  <p class="description">Current description: <span id="skill-desc">完整开发功能的全流程自动化工作流（Vibe Coding 范式）。当用户提出"开发一个新功能"、"实现 XX 接口"、"做一个 XX 模块"、"新增 XX 业务"、"端到端做一个 XX"、"帮我从零搭一个 XX"等需要跨多文件、多阶段闭环的开发任务时，必须使用此 skill。它会按需求→设计(Plan)→编码→测试→Review→提交 6 阶段闭环推进，并在合适节点委托 subagent 并行加速。即使用户只是说"做一个 XX 功能"没明确提流程，也应触发。简单的单行修改、bug 排查、读代码、改注释不要触发。</span></p>
+
+  <div class="controls">
+    <button class="btn btn-add" onclick="addRow()">+ Add Query</button>
+    <button class="btn btn-export" onclick="exportEvalSet()">Export Eval Set</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:65%">Query</th>
+        <th style="width:18%">Should Trigger</th>
+        <th style="width:10%">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="eval-body"></tbody>
+  </table>
+
+  <p class="summary" id="summary"></p>
+
+  <script>
+    const EVAL_DATA = [
+  {
+    "query": "帮我从零搭一个简单的 todo 管理后端：FastAPI + SQLite，要 CRUD 接口 + 一个按标签筛选的接口。我希望能直接 uvicorn 跑起来。",
+    "should_trigger": true
+  },
+  {
+    "query": "我们这个 SpringBoot 项目要加个会员等级体系：bronze/silver/gold，按累计消费金额自动升级，要触发升级时发个消息到 kafka。你帮我端到端做一下，schema 我可以改。",
+    "should_trigger": true
+  },
+  {
+    "query": "周五要给老板 demo，赶紧帮我把这个 React 后台加个 Excel 导出功能，能下载当前列表页的数据就行",
+    "should_trigger": true
+  },
+  {
+    "query": "在 src/api 下加个 GET /api/users/{id}/login-stats 接口，按 days 参数返回最近 N 天的登录次数。User 实体已经有了，LoginLog 表也有，自己看着用。",
+    "should_trigger": true
+  },
+  {
+    "query": "ok 我现在要做一个内部小工具：上传一份 CSV，按指定列做分组统计，结果在网页表格里展示。用 Streamlit 或者 Flask 随便你挑，怎么简单怎么来",
+    "should_trigger": true
+  },
+  {
+    "query": "实现一下我们之前 PRD 里说的那个『订单合并发货』功能，前后端都要改。后端 Go，前端 Vue3。要带单元测试。",
+    "should_trigger": true
+  },
+  {
+    "query": "整一个能跑的 MVP 出来：用户输入一段文本，调 openai 接口做翻译，前端展示。要部署到 vercel 的那种简单结构",
+    "should_trigger": true
+  },
+  {
+    "query": "在我这个 nest.js 项目里加一个 webhook 接收端点 /webhook/stripe，要验签、要幂等、要把事件存数据库后再异步处理",
+    "should_trigger": true
+  },
+  {
+    "query": "给我这个工具脚本加一个子命令 `dedupe --by column1,column2` 支持按多列去重，要兼容现在的单列模式不破坏",
+    "should_trigger": true
+  },
+  {
+    "query": "新增一个定时任务，每天凌晨 2 点跑一次，把过去 24 小时的失败订单导出成 csv 发到运营邮箱。可以参考现有的 BalanceReportJob",
+    "should_trigger": true
+  },
+  {
+    "query": "把这个文件第 47 行的 `var` 改成 `const`",
+    "should_trigger": false
+  },
+  {
+    "query": "解释下 OrderService.calculateTax 这个方法是干嘛的，参数和返回值都讲一下",
+    "should_trigger": false
+  },
+  {
+    "query": "刚刚跑测试有个 NullPointerException：at com.example.UserMapper.findById:32，帮我看看哪里出问题了",
+    "should_trigger": false
+  },
+  {
+    "query": "把 PaymentHandler 这个类名改成 PaymentProcessor，所有引用一起改",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我看下这个 PR 改动 (#1234) 有没有问题，重点关注事务边界",
+    "should_trigger": false
+  },
+  {
+    "query": "我们项目要不要从 REST 迁到 gRPC？你怎么看，给个建议",
+    "should_trigger": false
+  },
+  {
+    "query": "加个 .gitignore，忽略 node_modules / dist / .env",
+    "should_trigger": false
+  },
+  {
+    "query": "把这个 for 循环改成 stream 写法，看起来更现代点",
+    "should_trigger": false
+  },
+  {
+    "query": "搜一下整个仓库哪里用到了 deprecatedFooBar 这个方法",
+    "should_trigger": false
+  },
+  {
+    "query": "看下这段代码为啥跑出来的金额比预期少了 0.01，是不是浮点精度问题",
+    "should_trigger": false
+  }
+];
+
+    let evalItems = [...EVAL_DATA];
+
+    function render() {
+      const tbody = document.getElementById('eval-body');
+      tbody.innerHTML = '';
+
+      // Sort: should-trigger first, then should-not-trigger
+      const sorted = evalItems
+        .map((item, origIdx) => ({ ...item, origIdx }))
+        .sort((a, b) => (b.should_trigger ? 1 : 0) - (a.should_trigger ? 1 : 0));
+
+      let lastGroup = null;
+      sorted.forEach(item => {
+        const group = item.should_trigger ? 'trigger' : 'no-trigger';
+        if (group !== lastGroup) {
+          const headerRow = document.createElement('tr');
+          headerRow.className = 'section-header';
+          headerRow.innerHTML = `<td colspan="3">${item.should_trigger ? 'Should Trigger' : 'Should NOT Trigger'}</td>`;
+          tbody.appendChild(headerRow);
+          lastGroup = group;
+        }
+
+        const idx = item.origIdx;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><textarea class="query-input" onchange="updateQuery(${idx}, this.value)">${escapeHtml(item.query)}</textarea></td>
+          <td>
+            <label class="toggle">
+              <input type="checkbox" ${item.should_trigger ? 'checked' : ''} onchange="updateTrigger(${idx}, this.checked)">
+              <span class="slider"></span>
+            </label>
+            <span style="margin-left:8px;font-size:0.8rem;color:#b0aea5">${item.should_trigger ? 'Yes' : 'No'}</span>
+          </td>
+          <td><button class="btn-delete" onclick="deleteRow(${idx})">Delete</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+      updateSummary();
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function updateQuery(idx, value) { evalItems[idx].query = value; updateSummary(); }
+    function updateTrigger(idx, value) { evalItems[idx].should_trigger = value; render(); }
+    function deleteRow(idx) { evalItems.splice(idx, 1); render(); }
+
+    function addRow() {
+      evalItems.push({ query: '', should_trigger: true });
+      render();
+      const inputs = document.querySelectorAll('.query-input');
+      inputs[inputs.length - 1].focus();
+    }
+
+    function updateSummary() {
+      const trigger = evalItems.filter(i => i.should_trigger).length;
+      const noTrigger = evalItems.filter(i => !i.should_trigger).length;
+      document.getElementById('summary').textContent =
+        `${evalItems.length} queries total: ${trigger} should trigger, ${noTrigger} should not trigger`;
+    }
+
+    function exportEvalSet() {
+      const valid = evalItems.filter(i => i.query.trim() !== '');
+      const data = valid.map(i => ({ query: i.query.trim(), should_trigger: i.should_trigger }));
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'eval_set.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    render();
+  </script>
+</body>
+</html>

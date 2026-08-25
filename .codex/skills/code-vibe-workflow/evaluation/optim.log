@@ -1,0 +1,58 @@
+Split: 12 train, 8 test (holdout=0.4)
+
+============================================================
+Iteration 1/5
+Description: 完整开发功能的全流程自动化工作流（Vibe Coding 范式）。当用户提出"开发一个新功能"、"实现 XX 接口"、"做一个 XX 模块"、"新增 XX 业务"、"端到端做一个 XX"、"帮我从零搭一个 XX"等需要跨多文件、多阶段闭环的开发任务时，必须使用此 skill。它会按需求→设计(Plan)→编码→测试→Review→提交 6 阶段闭环推进，并在合适节点委托 subagent 并行加速。即使用户只是说"做一个 XX 功能"没明确提流程，也应触发。简单的单行修改、bug 排查、读代码、改注释不要触发。
+============================================================
+Train: 24/36 correct, precision=100% recall=33% accuracy=67% (331.6s)
+  [FAIL] rate=0/3 expected=True: 实现一下我们之前 PRD 里说的那个『订单合并发货』功能，前后端都要改。后端 Go，前端 Vue3。要带单元测试。
+  [FAIL] rate=0/3 expected=True: 整一个能跑的 MVP 出来：用户输入一段文本，调 openai 接口做翻译，前端展示。要部署到 vercel 的那种简单
+  [FAIL] rate=0/3 expected=True: 新增一个定时任务，每天凌晨 2 点跑一次，把过去 24 小时的失败订单导出成 csv 发到运营邮箱。可以参考现有的 Ba
+  [FAIL] rate=0/3 expected=True: ok 我现在要做一个内部小工具：上传一份 CSV，按指定列做分组统计，结果在网页表格里展示。用 Streamlit 或者
+  [PASS] rate=3/3 expected=True: 帮我从零搭一个简单的 todo 管理后端：FastAPI + SQLite，要 CRUD 接口 + 一个按标签筛选的接口
+  [PASS] rate=3/3 expected=True: 我们这个 SpringBoot 项目要加个会员等级体系：bronze/silver/gold，按累计消费金额自动升级，要
+  [PASS] rate=0/3 expected=False: 解释下 OrderService.calculateTax 这个方法是干嘛的，参数和返回值都讲一下
+  [PASS] rate=0/3 expected=False: 搜一下整个仓库哪里用到了 deprecatedFooBar 这个方法
+  [PASS] rate=0/3 expected=False: 把这个 for 循环改成 stream 写法，看起来更现代点
+  [PASS] rate=0/3 expected=False: 把这个文件第 47 行的 `var` 改成 `const`
+  [PASS] rate=0/3 expected=False: 加个 .gitignore，忽略 node_modules / dist / .env
+  [PASS] rate=0/3 expected=False: 看下这段代码为啥跑出来的金额比预期少了 0.01，是不是浮点精度问题
+Test : 12/24 correct, precision=100% recall=0% accuracy=50% (0.0s)
+  [FAIL] rate=0/3 expected=True: 在我这个 nest.js 项目里加一个 webhook 接收端点 /webhook/stripe，要验签、要幂等、要把事
+  [FAIL] rate=0/3 expected=True: 在 src/api 下加个 GET /api/users/{id}/login-stats 接口，按 days 参数返回
+  [FAIL] rate=0/3 expected=True: 周五要给老板 demo，赶紧帮我把这个 React 后台加个 Excel 导出功能，能下载当前列表页的数据就行
+  [FAIL] rate=0/3 expected=True: 给我这个工具脚本加一个子命令 `dedupe --by column1,column2` 支持按多列去重，要兼容现在的单
+  [PASS] rate=0/3 expected=False: 把 PaymentHandler 这个类名改成 PaymentProcessor，所有引用一起改
+  [PASS] rate=0/3 expected=False: 我们项目要不要从 REST 迁到 gRPC？你怎么看，给个建议
+  [PASS] rate=0/3 expected=False: 刚刚跑测试有个 NullPointerException：at com.example.UserMapper.findB
+  [PASS] rate=0/3 expected=False: 帮我看下这个 PR 改动 (#1234) 有没有问题，重点关注事务边界
+
+Improving description...
+Proposed (27.3s): 端到端开发新功能/新模块/新工具时使用此 skill，按需求→设计→编码→测试→Review→提交 6 阶段闭环推进。
+
+**应触发场景**（用户要"造一个新东西"，需跨多文件或多关注点）：
+- 实现/新增/做一个：功能、接口、模块、业务、定时任务、脚本、小工具、页面、MVP、原型
+- 前后端联动改动、跨服务改动、需要带测试的开发
+- 搭建/整一个/从零做一个：服务、Demo、内部工具、可跑起来的东西
+- 参考现有 XX 实现一个新 XX、按 PRD/需求文档落地
+- 任何口语化的"帮我做个 XX"、"整一个 XX 出来"、"加一个 XX 任务/job/接口"
+
+只要意图是"产出一段新的、可运行的、需要设计+编码+验证的代码资产"就应触发，无论用户是否提到"流程""设计""测试"。
+
+**不触发**：单行/单段修改、改注释/重命名、纯读代码/搜代码/解释代码、bug 排查与定位、加配置文件、把 A 写法改成 B 写法等局部重构。
+
+============================================================
+Iteration 2/5
+Description: 端到端开发新功能/新模块/新工具时使用此 skill，按需求→设计→编码→测试→Review→提交 6 阶段闭环推进。
+
+**应触发场景**（用户要"造一个新东西"，需跨多文件或多关注点）：
+- 实现/新增/做一个：功能、接口、模块、业务、定时任务、脚本、小工具、页面、MVP、原型
+- 前后端联动改动、跨服务改动、需要带测试的开发
+- 搭建/整一个/从零做一个：服务、Demo、内部工具、可跑起来的东西
+- 参考现有 XX 实现一个新 XX、按 PRD/需求文档落地
+- 任何口语化的"帮我做个 XX"、"整一个 XX 出来"、"加一个 XX 任务/job/接口"
+
+只要意图是"产出一段新的、可运行的、需要设计+编码+验证的代码资产"就应触发，无论用户是否提到"流程""设计""测试"。
+
+**不触发**：单行/单段修改、改注释/重命名、纯读代码/搜代码/解释代码、bug 排查与定位、加配置文件、把 A 写法改成 B 写法等局部重构。
+============================================================

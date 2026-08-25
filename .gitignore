@@ -1,0 +1,12 @@
+# 忽略所有目录下的 local-config.json（本地配置文件）
+local-config.json
+
+# Claude Code 个人设置覆盖（不提交到 git）
+.claude/settings.local.json
+
+# 子代理记忆（自动生成，按需决定是否提交）
+# .claude/agent-memory/
+
+tests
+docs
+examples

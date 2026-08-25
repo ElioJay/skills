@@ -1,0 +1,6 @@
+{
+  "eval_id": 1,
+  "eval_name": "csv-dedupe-cli",
+  "prompt": "我要在当前目录开发一个 Python CLI 小工具 dedupe.py：读入一个 CSV 文件，按指定列去重，输出到新 CSV。命令格式：python dedupe.py <input.csv> <output.csv> --column <col_name>。要求保留首次出现的行，命令行参数缺失或文件不存在时给出友好错误。请帮我从零开发到可提交。注意：这是个全新空目录，没有现成代码。",
+  "assertions": []
+}

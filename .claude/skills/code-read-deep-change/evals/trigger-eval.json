@@ -1,0 +1,26 @@
+[
+  {"query": "这个 PR 改了啥、影响哪些上下游，帮我理一理", "should_trigger": true},
+  {"query": "git diff 看一下这次改动的影响半径", "should_trigger": true},
+  {"query": "读懂这次提交改了什么、有没有漏改的调用方", "should_trigger": true},
+  {"query": "把这段 .diff 的改动和波及范围讲清楚", "should_trigger": true},
+  {"query": "git show abc123 这个 commit 动了哪些东西、为什么这么改", "should_trigger": true},
+  {"query": "帮我看下 main..feature 这个范围改了哪些类和方法，影响谁", "should_trigger": true},
+  {"query": "这次改了 createOrder 的签名，哪些调用点要跟着改", "should_trigger": true},
+  {"query": "explain what this PR changed and which callers are affected", "should_trigger": true},
+  {"query": "看一下暂存区这次的改动改了啥、波及哪些下游契约", "should_trigger": true},
+  {"query": "这个 diff 新增了一个依赖，装配好了吗、影响半径多大", "should_trigger": true},
+
+  {"query": "读一下 OrderService.createOrder 这个方法的调用链和数据流", "should_trigger": false},
+  {"query": "读一下 OrderService.java 这个文件是干嘛的", "should_trigger": false},
+  {"query": "读一下 src/order 这个模块的整体结构和依赖", "should_trigger": false},
+  {"query": "带我通读整个项目的架构，给系统架构图", "should_trigger": false},
+  {"query": "review 这个 diff 有没有 bug、安全和性能问题", "should_trigger": false},
+  {"query": "帮我看看这个 PR 改得好不好、该不该合", "should_trigger": false},
+  {"query": "给这次改动涉及的代码都加上详细注释", "should_trigger": false},
+  {"query": "这行 stream().collect(toList()) 是什么意思，简单解释下", "should_trigger": false},
+  {"query": "这次改完线上偶发报错，帮我排查根因怎么修", "should_trigger": false},
+  {"query": "帮我新增一个优惠券抵扣功能", "should_trigger": false},
+  {"query": "认证在这个系统里是怎么贯穿的，经过哪些地方", "should_trigger": false},
+  {"query": "给这个项目补一套图集，落盘 docs 并记下 baseline commit", "should_trigger": false},
+  {"query": "把整个仓库的常用图都画一遍沉淀进版本库", "should_trigger": false}
+]

@@ -1,0 +1,6 @@
+{
+  "eval_id": 2,
+  "eval_name": "express-health-endpoint",
+  "prompt": "在当前空目录从零搭一个最小 Express 项目，实现 GET /health 接口，返回 {status:'ok', uptime: <进程运行秒数>, timestamp: <ISO 字符串>}。要求：使用 Express 4.x，加 jest 单元测试覆盖响应字段，提供 package.json，README 写明启动方式。请帮我从零做到可提交。",
+  "assertions": []
+}

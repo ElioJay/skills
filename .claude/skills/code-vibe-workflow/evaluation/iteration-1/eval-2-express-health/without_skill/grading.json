@@ -1,0 +1,49 @@
+{
+  "eval_name": "eval-2-express-health",
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "package.json 存在且合法 JSON",
+      "passed": true,
+      "evidence": "keys=['name', 'version', 'description', 'main', 'scripts', 'dependencies']"
+    },
+    {
+      "text": "package.json 含 express ^4.x",
+      "passed": true,
+      "evidence": "express=^4.19.2"
+    },
+    {
+      "text": "package.json 含 jest 依赖",
+      "passed": true,
+      "evidence": "jest=^29.7.0"
+    },
+    {
+      "text": "入口含 /health 路由",
+      "passed": true,
+      "evidence": "js_files=['src\\\\app.js', 'src\\\\server.js', 'tests\\\\health.test.js']"
+    },
+    {
+      "text": "测试文件存在",
+      "passed": true,
+      "evidence": "test_files=['tests\\\\health.test.js']"
+    },
+    {
+      "text": "测试覆盖三个字段 status/uptime/timestamp",
+      "passed": true,
+      "evidence": "hits=['status', 'uptime', 'timestamp']"
+    },
+    {
+      "text": "README 含启动命令（npm 或 node）",
+      "passed": true,
+      "evidence": "readme_len=971"
+    },
+    {
+      "text": "COMMIT_PLAN.md 含英文 commit message",
+      "passed": true,
+      "evidence": "package.json\n.gitignore\nREADME.md\nsrc/app.js\nsrc/server.js\ntests/health.test.js\nfeat: add minimal Express service with GET /health and jest tests"
+    }
+  ],
+  "passed": 8,
+  "total": 8,
+  "pass_rate": 1.0
+}

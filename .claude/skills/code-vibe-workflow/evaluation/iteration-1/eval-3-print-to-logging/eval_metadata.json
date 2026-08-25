@@ -1,0 +1,6 @@
+{
+  "eval_id": 3,
+  "eval_name": "print-to-logging-refactor",
+  "prompt": "我当前目录有个简单的 hello.py：里面只有一行 print('hello world')。帮我把 print 换成 Python 标准 logging（INFO 级别，logger 名用文件名）。就这一处改动。",
+  "assertions": []
+}

@@ -1,0 +1,24 @@
+[
+  {"query": "认证在这个系统里是怎么贯穿的，经过哪些地方", "should_trigger": true},
+  {"query": "下单这个流程端到端经过哪些文件和模块，帮我串一下", "should_trigger": true},
+  {"query": "userId 这个字段从入参一路流到落库都经过了什么", "should_trigger": true},
+  {"query": "缓存在哪些地方用到了，帮我顺着追一遍", "should_trigger": true},
+  {"query": "帮我追一下退款这个业务从入口到落库的完整路径", "should_trigger": true},
+  {"query": "鉴权逻辑散在哪些地方？顺着追一遍看有没有漏掉的入口", "should_trigger": true},
+  {"query": "trace how orderNo flows from the request down to the database", "should_trigger": true},
+  {"query": "事务是在哪几层、哪些方法上加的，把这条线索串起来", "should_trigger": true},
+  {"query": "日志/审计在这条下单链路上都在哪些点打了，追一下", "should_trigger": true},
+  {"query": "amount 金额从前端传进来到扣款，中间经过哪些转换和校验", "should_trigger": true},
+
+  {"query": "读一下 OrderService.createOrder 这个方法的调用链和数据流", "should_trigger": false},
+  {"query": "读一下 OrderService.java 这个文件是干嘛的", "should_trigger": false},
+  {"query": "读一下 src/order 这个模块的整体结构和依赖", "should_trigger": false},
+  {"query": "带我通读整个项目的架构，给系统架构图", "should_trigger": false},
+  {"query": "review 一下我这个 PR 有没有 bug、安全和性能问题", "should_trigger": false},
+  {"query": "给这条认证链路上的代码都加上详细注释", "should_trigger": false},
+  {"query": "这行 stream().collect(toList()) 是什么意思，简单解释下", "should_trigger": false},
+  {"query": "认证这块线上偶发失败，帮我排查根因怎么修", "should_trigger": false},
+  {"query": "帮我新增一个限流功能", "should_trigger": false},
+  {"query": "把整个支付模块读一遍，梳理它的结构", "should_trigger": false},
+  {"query": "梳理 PaymentService.refund 的数据流转图", "should_trigger": false}
+]

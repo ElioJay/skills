@@ -1,0 +1,65 @@
+{
+  "skill_name": "design-pattern-advisor",
+  "evals": [
+    {
+      "id": 0,
+      "name": "advisor-yagni-gate-rejects",
+      "prompt": "我有两种支付方式：余额支付和微信支付，以后大概率不会再加别的了。我是不是该用策略模式把它们抽象一下？",
+      "expected_output": "进入建议模式。先过 YAGNI 闸门：变化点只有 2 种且明确不会再增长，没有真实出现的扩展压力，因此判定『暂不需要策略模式』。给出不用模式的最简写法（一个 if/else 或 switch，或一个 Map 路由）作为推荐方案，并说明：等支付方式真的开始频繁增加（≥3 种且仍在加）再重构到 Strategy 也不迟（重构到模式优于提前设计）。明确不堆砌 Strategy 接口+多实现+工厂的完整骨架。语气是『先别用』。",
+      "assertions": [
+        "进入建议模式并先过 YAGNI 闸门",
+        "判定当前不需要策略模式（只有2种且不再增长）",
+        "给出 if/else 或 Map 路由的最简替代写法",
+        "说明等变化真出现(≥3且在增长)再重构到 Strategy",
+        "未直接产出完整的 Strategy 接口+多实现+工厂骨架",
+        "整体倾向为『先别用』而非鼓励上模式"
+      ],
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "advisor-strategy-warranted-with-alternative",
+      "prompt": "我的促销计算现在有满减、打折、赠品三种，产品说后面每个大促还会不断加新玩法，每种算法都不一样。现在全堆在一个方法里 if 判断，越来越乱。该怎么办？",
+      "expected_output": "进入建议模式。识别变化点=促销算法多态且持续增长，过 YAGNI 闸门通过（已≥3种且明确持续增加，有真实痛点：单方法 if 膨胀）。坏味道→候选模式映射到 Strategy（必要时配合一个简单工厂/Map 做策略选择）。给出目标语言的最小落地骨架（Strategy 接口 + 3 个实现 + 选择逻辑，带注释），同时给出『不用模式的更简单写法』对照（Map<类型,函数>），并说明：策略类较重、若每种算法只有几行可优先用 Map+lambda，何时升级到完整 Strategy。不承诺『用了模式=好代码』。",
+      "assertions": [
+        "进入建议模式并通过 YAGNI 闸门（≥3且持续增长、有真实痛点）",
+        "推荐 Strategy（可配合简单工厂/Map 选择策略）",
+        "给出带注释的最小落地骨架（接口+多实现+选择逻辑）",
+        "同时给出 Map+lambda 的更简单替代写法对照",
+        "说明 Map+lambda 与完整 Strategy 各自适用边界",
+        "不承诺『用了模式=好代码』"
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "review-mode-mixed-signals",
+      "prompt": "评审一下这个已有的 NotificationService.java，看看哪里可以用设计模式、哪里又过度设计了，给我分级清单和修改方向。",
+      "expected_output": "进入审查模式。扫两类信号并分级输出：① 漏用——sendByType 的 if/else 类型分支链且渠道在增长，建议引入 Strategy（按是否真在增长定 🔴/🟡）；nextStatus 的嵌套 if 状态流转可考虑 State（🟡，看状态是否会变复杂）。② 滥用——NotificationFactory 只有唯一实现属过度设计，建议移除工厂直接 new（🔴/🟡）；StringUtilSingleton 把无状态工具做成单例属过度设计，建议改静态方法（🔴/🟡）。每条说清后果，并对关键点给最小重构示例（Strategy 化）或拆掉模式的简化示例（删工厂/去单例）。不当成纯 bug/性能审查（那是 code-review-deep-zh）。",
+      "assertions": [
+        "进入审查模式并分级（建议改/可考虑/当前合理）输出",
+        "抓出 sendByType 的 if/else 类型分支可引入 Strategy(S1)",
+        "抓出 nextStatus 嵌套 if 可考虑 State(S2)",
+        "抓出 NotificationFactory 唯一实现=过度设计，建议去掉(O1)",
+        "抓出 StringUtilSingleton 无状态单例=过度设计，建议改静态方法(O2)",
+        "对漏用点给 Strategy 化最小重构示例",
+        "对滥用点给『拆掉模式』的简化示例",
+        "未把它当成纯代码质量/性能/ bug 审查"
+      ],
+      "files": ["evals/fixtures/NotificationService.java"]
+    },
+    {
+      "id": 3,
+      "name": "scope-guard-redirect",
+      "prompt": "照着需求把这个数据导出功能端到端实现了：接口、service、查询、导出 Excel 全写出来，能跑的那种。",
+      "expected_output": "识别这是端到端编码实现（产出可运行的完整功能），超出本 skill（设计模式决策层）范围。说明本 skill 只负责『要不要用模式、用哪个』的设计决策与最小示例，端到端实现应走 code-vibe-workflow；可主动提议『若实现中遇到要不要上某个模式的决策，再回来用本 skill』。不直接产出整套可运行实现。",
+      "assertions": [
+        "识别请求为端到端完整实现、超出本 skill 范围",
+        "建议改用 code-vibe-workflow 做端到端实现",
+        "未直接产出完整的接口+service+查询+导出实现",
+        "可提议实现中遇到模式取舍再回到本 skill"
+      ],
+      "files": []
+    }
+  ]
+}

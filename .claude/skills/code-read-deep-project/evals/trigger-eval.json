@@ -1,0 +1,27 @@
+[
+  {"query": "带我通读一下这个项目，给我系统架构图和模块依赖图", "should_trigger": true},
+  {"query": "这个仓库整体是什么架构、由哪些模块组成、技术栈是什么", "should_trigger": true},
+  {"query": "读懂 sample-shop 这个多模块项目，模块间依赖健康吗、有没有环", "should_trigger": true},
+  {"query": "帮我把整个代码库梳理成一份项目导览，方便新人 onboarding", "should_trigger": true},
+  {"query": "give me a system-level overview of this repo — C4 context, containers, module dependencies", "should_trigger": true},
+  {"query": "这个 monorepo 前后端都有，帮我理清整体架构和各模块怎么协作", "should_trigger": true},
+  {"query": "我刚接手这个项目，帮我从仓库根梳理出系统全景和技术栈", "should_trigger": true},
+  {"query": "这套多模块系统对外依赖了哪些外部系统？画个系统上下文图", "should_trigger": true},
+  {"query": "读一下整个 ./ 仓库，模块拆分怎样、依赖有没有环，出三张图", "should_trigger": true},
+  {"query": "帮我看看这个 Gradle 多模块项目的构建拓扑和模块间依赖", "should_trigger": true},
+
+  {"query": "读一下 src/order 这个模块的整体结构和依赖", "should_trigger": false},
+  {"query": "梳理 com.example.order 包：分层、依赖、对外接口", "should_trigger": false},
+  {"query": "读一下 OrderService.java 这个文件是干嘛的", "should_trigger": false},
+  {"query": "从 OrderService.createOrder 梳理调用关系，画调用图和数据流图", "should_trigger": false},
+  {"query": "review 一下我这个 PR 有没有 bug、安全和性能问题", "should_trigger": false},
+  {"query": "对整个项目做一次完整的安全审计", "should_trigger": false},
+  {"query": "评估一下这个项目的架构设计好不好、该怎么重构", "should_trigger": false},
+  {"query": "给整个项目的代码都加上详细注释", "should_trigger": false},
+  {"query": "这行 stream().collect(toList()) 是什么意思，简单解释下", "should_trigger": false},
+  {"query": "整个项目跑起来偶发 500，帮我排查根因怎么修", "should_trigger": false},
+  {"query": "帮我在这个项目里新增一个优惠券模块", "should_trigger": false},
+  {"query": "给这个项目补一套图集，落盘到 docs 里，带索引和维护约定", "should_trigger": false},
+  {"query": "把整个仓库的架构图、流程图、数据流图、时序图、运维图都画一遍存进版本库", "should_trigger": false},
+  {"query": "出一套图沉淀到 docs，要能跟着代码一起更新", "should_trigger": false}
+]

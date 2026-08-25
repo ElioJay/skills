@@ -1,0 +1,33 @@
+{
+  "skill_name": "code-read-deep-project",
+  "evals": [
+    {
+      "id": 0,
+      "name": "polyglot-multimodule-sample-shop",
+      "prompt": "带我通读一下 evals/fixtures/sample-shop 这个项目，给我一份项目级阅读报告：系统架构图、模块依赖图、技术栈和模块间依赖健康。",
+      "expected_output": "一份中文项目阅读报告，含 11 段固定结构（定位/系统职责概述/模块服务总览/技术栈与构建拓扑/系统上下文/容器模块架构/模块间依赖与依赖健康/核心域与数据架构/入口与可部署单元/关键端到端路径走读/问题）与三张 Mermaid 图（① C4 Context、② C4 Container、③ 模块间依赖图）。模块/服务总览应列全 4 个模块：shared(Java公共库)、payment(Java)、order(Java)、web(TypeScript 前端)——验证多语言/polyglot 识别。技术栈应识别 Java+Gradle 多模块 与 TS+npm 两套生态，并从 settings.gradle/build.gradle 解析构建拓扑（order→{shared,payment}、payment→shared）。① 上下文图应含用户与外部支付网关。② 容器图应体现 web 前端 →(HTTP)→ order → payment/shared 的运行期通信。③ 模块依赖图应判定『无环（满足 ADP）』并识别 shared 为稳定核心。核心域应点出 order/payment 限界上下文与 shared.Money 共享数据模型。入口应识别 OrderController(POST /orders) 与 web 前端。关键端到端路径走读应只走 1~3 条跨模块路径（web→OrderController→OrderService→PaymentService→Money），每条附『读某模块→code-read-deep-module；某文件→code-read-deep-file；某方法→code-read-deep-function』四级委派。问题段应抓出跨模块契约误用：OrderService.createOrder 忽略 paymentService.charge 的返回值（扣款失败仍下单成功）。不应逐模块/逐文件深挖，不做安全/性能/架构评审。",
+      "files": ["evals/fixtures/sample-shop"]
+    },
+    {
+      "id": 1,
+      "name": "scope-guard-单模块应改道module",
+      "prompt": "读一下 evals/fixtures/sample-shop/order 这个模块的整体结构和依赖。",
+      "expected_output": "不产出项目级报告。应识别用户给的是单个模块（目录/包），明确引导改用 code-read-deep-module。若想通读整个项目再让用户给项目/仓库根。验证单模块改道闸门生效。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "scope-guard-单文件应改道file",
+      "prompt": "读一下 OrderService.java 这个文件是干嘛的。",
+      "expected_output": "不产出项目级报告。应识别用户给的是单个文件，明确引导改用 code-read-deep-file。验证单文件改道闸门生效。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "scope-guard-单方法应改道function",
+      "prompt": "从 OrderService.createOrder 梳理调用关系，画调用图和数据流图。",
+      "expected_output": "不产出项目级报告。应识别用户给的是单个方法入口（类名.方法名），明确引导改用 code-read-deep-function。验证单方法改道闸门生效。",
+      "files": []
+    }
+  ]
+}

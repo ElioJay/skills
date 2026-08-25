@@ -1,0 +1,26 @@
+[
+  {"query": "读一下 src/order 这个模块的整体结构和依赖，出图", "should_trigger": true},
+  {"query": "梳理 com.example.order 包：分层、依赖、对外接口，画依赖图", "should_trigger": true},
+  {"query": "payments 这个 Python 包是干嘛的，文件怎么组织、依赖健康吗", "should_trigger": true},
+  {"query": "读懂 internal/order 这个 Go 包的结构和上下游，画个图", "should_trigger": true},
+  {"query": "帮我看看 src/modules/cart 这个模块有哪些文件和子包、各自职责", "should_trigger": true},
+  {"query": "这个 order 模块内部依赖有没有环？分层有没有被破坏？给我内部依赖图", "should_trigger": true},
+  {"query": "give me a module-level overview of packages/checkout — structure, layering, dependencies", "should_trigger": true},
+  {"query": "com.example.user 这个包对外暴露了哪些接口、又被哪些模块消费", "should_trigger": true},
+  {"query": "通读 app/services/billing 整个目录，梳理它的入口和关键路径并出图", "should_trigger": true},
+  {"query": "梳理一下支付模块的整体结构、对外门面和外部依赖", "should_trigger": true},
+
+  {"query": "读一下 OrderService.java 这个文件是干嘛的", "should_trigger": false},
+  {"query": "order_service.py 里都有哪些类和方法，给我一份文件级阅读报告", "should_trigger": false},
+  {"query": "从 OrderService.createOrder 梳理调用关系，画调用图和数据流图", "should_trigger": false},
+  {"query": "PayService.refund 这个方法的调用链和数据流是怎样的", "should_trigger": false},
+  {"query": "把整个项目的业务逻辑给我从头到尾梳理一遍", "should_trigger": false},
+  {"query": "帮我通读整个代码库，讲讲所有模块的整体结构", "should_trigger": false},
+  {"query": "review 一下我这个 PR 有没有 bug、安全和性能问题", "should_trigger": false},
+  {"query": "给 src/order 这个目录下的代码加上详细注释", "should_trigger": false},
+  {"query": "这行 stream().collect(toList()) 是什么意思，简单解释下", "should_trigger": false},
+  {"query": "src/order 模块里下单偶发超卖，帮我排查根因怎么修", "should_trigger": false},
+  {"query": "对 auth 模块做一次完整的安全审计", "should_trigger": false},
+  {"query": "把 src/order 这个模块的各种图都画一遍存到 docs 里", "should_trigger": false},
+  {"query": "给 payments 模块出一套成套图集落盘，带图例约定，方便交接", "should_trigger": false}
+]

@@ -1,0 +1,26 @@
+{
+  "skill_name": "code-read-deep-trace",
+  "evals": [
+    {
+      "id": 0,
+      "name": "trace-下单feature-in-order-module",
+      "prompt": "在 evals/fixtures/order-module 里，帮我追一下『下单』这条线索端到端经过了哪些文件，串起来出图。",
+      "expected_output": "一份中文追踪报告，含 8 段固定结构（追踪目标/起点与终点/跨文件跨模块路径/涉及组件清单/数据流与控制流/断点与缺口/问题/下一步）与两张 Mermaid 图（① 涉及组件关系图、② 端到端追踪流图）。起点应定位到 web/OrderController.submit，终点到 OrderDao.insert（落库）。跨文件路径应逐跳列出并带 file:line：OrderController.submit → OrderService.createOrder → userService.findById（外部）→ inventoryClient.lock（外部 HTTP）→ toEntity → orderDao.insert，每一跳可点击。涉及组件清单应覆盖 OrderController/OrderService/OrderDao/CreateOrderReq/OrderPO + 外部 UserService/InventoryClient。断点与缺口应指出 UserService/InventoryClient 属外部、孤立 fixture 无法继续向下追（标断点）。问题段可顺带记录这条线索上的逻辑硬伤：user 可能 null 致 NPE、忽略 inventoryClient.lock 返回值、空 catch 吞 insert 异常。应体现『跨容器串线索』而非把某个文件读透；要读透某一跳应附向下委派（→ code-read-deep-function/file）。",
+      "files": ["evals/fixtures/order-module"]
+    },
+    {
+      "id": 1,
+      "name": "scope-guard-单方法应改道function",
+      "prompt": "读一下 OrderService.createOrder 这个方法的调用链和数据流。",
+      "expected_output": "不产出追踪报告。应识别这是『读单个方法这一个容器』，引导改用 code-read-deep-function；并说明若想追的是一条贯穿系统的线索请给出线索（如某 feature/关注点/字段）。验证容器改道闸门生效。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "scope-guard-单模块应改道module",
+      "prompt": "读一下 order 这个模块的整体结构和依赖。",
+      "expected_output": "不产出追踪报告。应识别这是『读单个模块这一个容器』，引导改用 code-read-deep-module。验证容器改道闸门生效。",
+      "files": []
+    }
+  ]
+}

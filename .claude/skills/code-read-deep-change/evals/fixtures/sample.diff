@@ -1,0 +1,24 @@
+diff --git a/order/src/main/java/com/example/order/OrderService.java b/order/src/main/java/com/example/order/OrderService.java
+index 1111111..2222222 100644
+--- a/order/src/main/java/com/example/order/OrderService.java
++++ b/order/src/main/java/com/example/order/OrderService.java
+@@ -27,11 +27,15 @@ public class OrderService {
+      * @return 生成的订单号
+      */
+-    public String createOrder(CreateOrderReq req) {
++    public String createOrder(CreateOrderReq req, String couponCode) {
+         User user = userService.findById(req.getUserId());
+         String buyerName = user.getProfile().getName();
+
+         boolean locked = inventoryClient.lock(req.getSkuId(), req.getQty());
++        // 新增：按优惠券计算抵扣（改变了订单落库内容）
++        long discount = couponService.discountFor(couponCode, req.getQty());
+
+         OrderPO po = toEntity(req, buyerName);
++        po.setDiscount(discount);
+         try {
+             orderDao.insert(po);
+         } catch (Exception e) {
+         }
+         return po.getOrderNo();
+     }

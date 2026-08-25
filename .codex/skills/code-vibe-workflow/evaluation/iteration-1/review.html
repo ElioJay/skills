@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "vibe-coding-workflow", "runs": [{"id": "eval-1-csv-dedupe-cli-with_skill", "prompt": "\u6211\u8981\u5728\u5f53\u524d\u76ee\u5f55\u5f00\u53d1\u4e00\u4e2a Python CLI \u5c0f\u5de5\u5177 dedupe.py\uff1a\u8bfb\u5165\u4e00\u4e2a CSV \u6587\u4ef6\uff0c\u6309\u6307\u5b9a\u5217\u53bb\u91cd\uff0c\u8f93\u51fa\u5230\u65b0 CSV\u3002\u547d\u4ee4\u683c\u5f0f\uff1apython dedupe.py <input.csv> <output.csv> --column <col_name>\u3002\u8981\u6c42\u4fdd\u7559\u9996\u6b21\u51fa\u73b0\u7684\u884c\uff0c\u547d\u4ee4\u884c\u53c2\u6570\u7f3a\u5931\u6216\u6587\u4ef6\u4e0d\u5b58\u5728\u65f6\u7ed9\u51fa\u53cb\u597d\u9519\u8bef\u3002\u8bf7\u5e2e\u6211\u4ece\u96f6\u5f00\u53d1\u5230\u53ef\u63d0\u4ea4\u3002\u6ce8\u610f\uff1a\u8fd9\u662f\u4e2a\u5168\u65b0\u7a7a\u76ee\u5f55\uff0c\u6ca1\u6709\u73b0\u6210\u4ee3\u7801\u3002", "eval_id": 1, "outputs": [{"name": "COMMIT_PLAN.md", "type": "text", "content": "# Commit Plan\n\n## Files to commit\n\n- `dedupe.py`            \u2014 CLI main program (argparse + csv-based dedupe)\n- `test_dedupe.py`       \u2014 Unit tests covering happy path and 4 edge cases\n- `README.md`            \u2014 Usage and error-handling documentation\n\n## Commit message (English, per CLAUDE.md rule)\n\n```\nfeat(dedupe): add CSV column-based deduplication CLI\n\nImplement dedupe.py, a zero-dependency CLI that removes duplicate rows\nfrom a CSV file based on a user-specified column, keeping the first\noccurrence. Provide friendly error messages for missing args, missing\ninput file, missing column, and empty/headerless CSVs, all with a\nnon-zero exit code. Include unittest coverage for the happy path and\nedge cases.\n```\n\n## Git commands that would be run (not executed in this simulation)\n\n```bash\ngit add dedupe.py test_dedupe.py README.md\ngit commit -m \"feat(dedupe): add CSV column-based deduplication CLI\n\nImplement dedupe.py, a zero-dependency CLI that removes duplicate rows\nfrom a CSV file based on a user-specified column, keeping the first\noccurrence. Provide friendly error messages for missing args, missing\ninput file, missing column, and empty/headerless CSVs, all with a\nnon-zero exit code. Include unittest coverage for the happy path and\nedge cases.\"\ngit status\n```\n\nPer CLAUDE.md: stay on current branch, do not create a new branch, do not push.\n"}, {"name": "dedupe.py", "type": "text", "content": "#!/usr/bin/env python3\n# -*- coding: utf-8 -*-\n\"\"\"CSV \u53bb\u91cd CLI \u5de5\u5177.\n\n\u6309\u6307\u5b9a\u5217\u5bf9 CSV \u53bb\u91cd\uff0c\u4fdd\u7559\u6bcf\u4e2a\u53bb\u91cd key \u7b2c\u4e00\u6b21\u51fa\u73b0\u7684\u884c\u3002\n\u7528\u6cd5\uff1a\n    python dedupe.py <input.csv> <output.csv> --column <col_name>\n\n\u8bbe\u8ba1\u53d6\u820d\uff08WHY\uff09\uff1a\n- \u7528\u6807\u51c6\u5e93 csv\uff0c\u4e0d\u5f15\u5165 pandas\uff1a\u9700\u6c42\u4f53\u91cf\u5c0f\uff0c\u96f6\u4f9d\u8d56\u90e8\u7f72\u66f4\u8f7b\u3002\n- \u5168\u91cf\u52a0\u8f7d + set \u5224\u91cd\uff1a\u5b9e\u73b0\u7b80\u5355\u3001\u4fdd\u7559\u884c\u987a\u5e8f\u3001\u5bf9\u4e2d\u5c0f CSV \u8db3\u591f\uff1b\n  \u8d85\u5927\u6587\u4ef6\u573a\u666f\u4e0d\u5728\u672c\u6b21\u9700\u6c42\u8303\u56f4\u5185\u3002\n- \u9519\u8bef\u7edf\u4e00\u8d70 stderr + \u975e\u96f6\u9000\u51fa\u7801\uff1a\u65b9\u4fbf shell pipeline \u5224\u5b9a\u5931\u8d25\u3002\n\"\"\"\n\nimport argparse\nimport csv\nimport os\nimport sys\nfrom typing import List, Optional\n\n\n# \u9000\u51fa\u7801\uff1a\u7ea6\u5b9a\u533a\u5206\u7528\u6237\u9519\u8bef\u4e0e\u7cfb\u7edf\u9519\u8bef\uff0c\u65b9\u4fbf\u811a\u672c\u4e0a\u5c42\u5224\u65ad\nEXIT_OK = 0\nEXIT_USER_ERROR = 2  # \u53c2\u6570\u9519\u8bef\u3001\u6587\u4ef6\u7f3a\u5931\u3001\u5217\u7f3a\u5931 \u2014\u2014 argparse \u9ed8\u8ba4\u4e5f\u7528 2\n\n\ndef _build_parser() -> argparse.ArgumentParser:\n    \"\"\"\u6784\u5efa argparse \u89e3\u6790\u5668.\n\n    \u5355\u72ec\u62bd\u51fa\u4fbf\u4e8e\u6d4b\u8bd5\u65f6\u590d\u7528\uff0c\u5e76\u4fdd\u8bc1 --help \u884c\u4e3a\u7edf\u4e00\u3002\n    \"\"\"\n    parser = argparse.ArgumentParser(\n        prog=\"dedupe.py\",\n        description=\"\u6309\u6307\u5b9a\u5217\u5bf9 CSV \u6587\u4ef6\u53bb\u91cd\uff0c\u4fdd\u7559\u9996\u6b21\u51fa\u73b0\u7684\u884c\u3002\",\n    )\n    # \u4f4d\u7f6e\u53c2\u6570\uff1ainput/output \u5fc5\u586b\uff0c\u7f3a\u5931\u65f6 argparse \u4f1a\u81ea\u52a8\u62a5\u53cb\u597d\u9519\u8bef\n    parser.add_argument(\"input\", help=\"\u8f93\u5165 CSV \u6587\u4ef6\u8def\u5f84\")\n    parser.add_argument(\"output\", help=\"\u8f93\u51fa CSV \u6587\u4ef6\u8def\u5f84\")\n    parser.add_argument(\n        \"--column\",\n        required=True,\n        help=\"\u4f5c\u4e3a\u53bb\u91cd\u4f9d\u636e\u7684\u5217\u540d\uff08\u5fc5\u987b\u5b58\u5728\u4e8e\u8f93\u5165 CSV \u7684\u8868\u5934\u4e2d\uff09\",\n    )\n    return parser\n\n\ndef dedupe_csv(input_path: str, output_path: str, column: str) -> int:\n    \"\"\"\u6267\u884c\u53bb\u91cd\u6838\u5fc3\u903b\u8f91.\n\n    \u8fd4\u56de\u5199\u5165\u5230\u8f93\u51fa\u6587\u4ef6\u7684\u53bb\u91cd\u540e\u884c\u6570\uff08\u4e0d\u542b\u8868\u5934\uff09\u3002\n\n    Raises:\n        FileNotFoundError: \u8f93\u5165\u6587\u4ef6\u4e0d\u5b58\u5728\u65f6\u629b\u51fa\uff0c\u7531 main \u8f6c\u6210\u53cb\u597d\u9519\u8bef\u3002\n        ValueError: \u8f93\u5165 CSV \u65e0\u8868\u5934\u6216\u6307\u5b9a\u5217\u4e0d\u5b58\u5728\u65f6\u629b\u51fa\u3002\n    \"\"\"\n    # \u63d0\u524d\u6821\u9a8c\u8f93\u5165\u5b58\u5728\uff0c\u907f\u514d\u540e\u7eed open \u629b\u51fa\u539f\u59cb\u5806\u6808\u7ed9\u7528\u6237\n    if not os.path.isfile(input_path):\n        raise FileNotFoundError(f\"\u8f93\u5165\u6587\u4ef6\u4e0d\u5b58\u5728\uff1a{input_path}\")\n\n    # newline=\"\" \u662f csv \u6a21\u5757\u5b98\u65b9\u63a8\u8350\uff0c\u907f\u514d\u5728 Windows \u4e0a\u51fa\u73b0\u7a7a\u884c\n    with open(input_path, \"r\", newline=\"\", encoding=\"utf-8\") as fin:\n        reader = csv.DictReader(fin)\n\n        # fieldnames \u4e3a\u7a7a\u8bf4\u660e\u6587\u4ef6\u6ca1\u6709\u8868\u5934\u6216\u4e3a\u7a7a\u6587\u4ef6\uff0c\u6309\u7528\u6237\u9519\u8bef\u5904\u7406\n        if not reader.fieldnames:\n            raise ValueError(\"\u8f93\u5165 CSV \u7f3a\u5c11\u8868\u5934\u6216\u4e3a\u7a7a\u6587\u4ef6\")\n\n        # \u6307\u5b9a\u5217\u5fc5\u987b\u5b58\u5728\uff0c\u5426\u5219\u6ca1\u6cd5\u53bb\u91cd\uff0c\u6309\u7528\u6237\u9519\u8bef\u5904\u7406\n        if column not in reader.fieldnames:\n            raise ValueError(\n                f\"\u5217 '{column}' \u4e0d\u5728\u8868\u5934\u4e2d\u3002\u53ef\u7528\u5217\uff1a{list(reader.fieldnames)}\"\n            )\n\n        seen = set()  # \u4ec5\u5b58\u952e\u503c\u5b57\u7b26\u4e32\uff0cO(1) \u5224\u91cd\n        kept_rows: List[dict] = []\n        for row in reader:\n            # row[column] \u53d6\u53bb\u91cd key\uff1bNone \u8f6c\u4e3a\u7a7a\u4e32\u4ee5\u4fdd\u8bc1\u53ef\u54c8\u5e0c\u4e00\u81f4\u6027\n            key = row.get(column) or \"\"\n            if key in seen:\n                continue\n            seen.add(key)\n            kept_rows.append(row)\n\n        fieldnames = list(reader.fieldnames)\n\n    # \u5168\u90e8\u5199\u5165\u5b8c\u6210\u540e\u518d\u6253\u5f00\u8f93\u51fa\u6587\u4ef6\uff0c\u907f\u514d\u8f93\u5165\u8bfb\u53d6\u5931\u8d25\u65f6\u6b8b\u7559\u534a\u6210\u54c1\n    with open(output_path, \"w\", newline=\"\", encoding=\"utf-8\") as fout:\n        writer = csv.DictWriter(fout, fieldnames=fieldnames)\n        writer.writeheader()\n        writer.writerows(kept_rows)\n\n    return len(kept_rows)\n\n\ndef main(argv: Optional[List[str]] = None) -> int:\n    \"\"\"CLI \u5165\u53e3\uff0c\u8fd4\u56de\u8fdb\u7a0b\u9000\u51fa\u7801\uff08\u4fbf\u4e8e\u6d4b\u8bd5\u76f4\u63a5\u65ad\u8a00\uff09.\"\"\"\n    parser = _build_parser()\n    # \u53c2\u6570\u7f3a\u5931\u65f6 argparse \u4f1a\u81ea\u5df1\u6253\u5370\u7528\u6cd5\u5e76 sys.exit(2)\uff0c\u5df2\u7ecf\u662f\u53cb\u597d\u9519\u8bef\n    args = parser.parse_args(argv)\n\n    try:\n        kept = dedupe_csv(args.input, args.output, args.column)\n    except FileNotFoundError as e:\n        # \u7528\u6237\u5c42\u9519\u8bef\uff1a\u53ea\u6253\u5370\u6d88\u606f\uff0c\u4e0d\u5e26 traceback\n        print(f\"\u9519\u8bef\uff1a{e}\", file=sys.stderr)\n        return EXIT_USER_ERROR\n    except ValueError as e:\n        print(f\"\u9519\u8bef\uff1a{e}\", file=sys.stderr)\n        return EXIT_USER_ERROR\n\n    print(f\"\u5b8c\u6210\uff1a\u5df2\u5199\u5165 {kept} \u884c\u53bb\u91cd\u7ed3\u679c\u5230 {args.output}\")\n    return EXIT_OK\n\n\nif __name__ == \"__main__\":\n    # \u76f4\u63a5\u628a main \u7684\u8fd4\u56de\u503c\u4f5c\u4e3a\u8fdb\u7a0b\u9000\u51fa\u7801\n    sys.exit(main())\n"}, {"name": "README.md", "type": "text", "content": "# dedupe.py\n\n\u6309\u6307\u5b9a\u5217\u5bf9 CSV \u6587\u4ef6\u53bb\u91cd\u7684 Python CLI \u5c0f\u5de5\u5177\u3002\u4fdd\u7559\u6bcf\u4e2a\u53bb\u91cd key \u7b2c\u4e00\u6b21\u51fa\u73b0\u7684\u884c\uff0c\u8f93\u51fa\u5230\u65b0 CSV \u6587\u4ef6\u3002\n\n## \u7279\u6027\n\n- \u96f6\u7b2c\u4e09\u65b9\u4f9d\u8d56\uff08\u4ec5\u4f7f\u7528 Python \u6807\u51c6\u5e93 `csv` + `argparse`\uff09\n- \u4fdd\u7559\u539f\u5217\u987a\u5e8f\u4e0e\u539f\u8868\u5934\n- \u4fdd\u7559**\u6bcf\u4e2a key \u9996\u6b21\u51fa\u73b0**\u7684\u6574\u884c\n- \u53cb\u597d\u9519\u8bef\u5904\u7406\uff1a\u53c2\u6570\u7f3a\u5931\u3001\u6587\u4ef6\u4e0d\u5b58\u5728\u3001\u5217\u540d\u4e0d\u5b58\u5728\u5747\u7ed9\u51fa\u6e05\u6670\u63d0\u793a\uff0c\u5e76\u4ee5\u975e\u96f6\u9000\u51fa\u7801\u9000\u51fa\n\n## \u73af\u5883\u8981\u6c42\n\n- Python 3.7+\n\n## \u7528\u6cd5\n\n```bash\npython dedupe.py <input.csv> <output.csv> --column <col_name>\n```\n\n### \u793a\u4f8b\n\n\u8f93\u5165 `users.csv`\uff1a\n\n```csv\nid,name,age\n1,alice,20\n2,bob,30\n1,alice-dup,99\n3,carol,40\n```\n\n\u547d\u4ee4\uff1a\n\n```bash\npython dedupe.py users.csv users_unique.csv --column id\n```\n\n\u8f93\u51fa `users_unique.csv`\uff08\u91cd\u590d\u7684 id=1 \u884c\u88ab\u4e22\u5f03\uff0c\u4fdd\u7559\u9996\u6b21\u51fa\u73b0\uff09\uff1a\n\n```csv\nid,name,age\n1,alice,20\n2,bob,30\n3,carol,40\n```\n\n## \u9519\u8bef\u5904\u7406\n\n| \u573a\u666f | \u884c\u4e3a |\n|------|------|\n| \u7f3a\u5c11\u4f4d\u7f6e\u53c2\u6570\u6216 `--column` | argparse \u6253\u5370\u7528\u6cd5\u5e76\u4ee5\u9000\u51fa\u7801 2 \u9000\u51fa |\n| \u8f93\u5165\u6587\u4ef6\u4e0d\u5b58\u5728 | stderr \u8f93\u51fa `\u9519\u8bef\uff1a\u8f93\u5165\u6587\u4ef6\u4e0d\u5b58\u5728\uff1a...`\uff0c\u9000\u51fa\u7801 2 |\n| \u6307\u5b9a\u5217\u4e0d\u5728\u8868\u5934 | stderr \u8f93\u51fa `\u9519\u8bef\uff1a\u5217 'xxx' \u4e0d\u5728\u8868\u5934\u4e2d\u3002\u53ef\u7528\u5217\uff1a[...]`\uff0c\u9000\u51fa\u7801 2 |\n| \u8f93\u5165 CSV \u4e3a\u7a7a / \u65e0\u8868\u5934 | stderr \u8f93\u51fa `\u9519\u8bef\uff1a\u8f93\u5165 CSV \u7f3a\u5c11\u8868\u5934\u6216\u4e3a\u7a7a\u6587\u4ef6`\uff0c\u9000\u51fa\u7801 2 |\n\n## \u8fd0\u884c\u6d4b\u8bd5\n\n```bash\npython -m unittest test_dedupe -v\n```\n\n## \u6587\u4ef6\u7ed3\u6784\n\n```\ndedupe.py        # CLI \u4e3b\u7a0b\u5e8f\ntest_dedupe.py   # \u5355\u5143\u6d4b\u8bd5\nREADME.md        # \u672c\u6587\u4ef6\n```\n"}, {"name": "test_dedupe.py", "type": "text", "content": "# -*- coding: utf-8 -*-\n\"\"\"dedupe.py \u7684\u5355\u5143\u6d4b\u8bd5.\n\n\u8986\u76d6\uff1a\n- \u6b63\u5e38\u53bb\u91cd + \u4fdd\u7559\u9996\u6b21\u51fa\u73b0\n- \u8f93\u5165\u6587\u4ef6\u4e0d\u5b58\u5728 -> \u53cb\u597d\u9519\u8bef\uff0c\u975e\u96f6\u9000\u51fa\u7801\n- \u5217\u540d\u4e0d\u5b58\u5728 -> \u53cb\u597d\u9519\u8bef\uff0c\u975e\u96f6\u9000\u51fa\u7801\n- \u7f3a\u5c11\u5fc5\u586b\u53c2\u6570 --column -> argparse \u62a5\u9519\u5e76\u9000\u51fa\n- \u7a7a CSV / \u65e0\u8868\u5934 -> \u53cb\u597d\u9519\u8bef\n- \u8f93\u51fa\u6587\u4ef6\u5185\u5bb9\u6b63\u786e\uff08\u884c\u987a\u5e8f\u3001\u5217\u987a\u5e8f\uff09\n\"\"\"\n\nimport csv\nimport io\nimport os\nimport tempfile\nimport unittest\nfrom contextlib import redirect_stderr, redirect_stdout\n\nimport dedupe\n\n\ndef _write_csv(path: str, rows: list, fieldnames: list) -> None:\n    \"\"\"\u6d4b\u8bd5\u8f85\u52a9\uff1a\u628a list[dict] \u5199\u5230\u6307\u5b9a CSV \u8def\u5f84.\"\"\"\n    with open(path, \"w\", newline=\"\", encoding=\"utf-8\") as f:\n        writer = csv.DictWriter(f, fieldnames=fieldnames)\n        writer.writeheader()\n        writer.writerows(rows)\n\n\ndef _read_csv(path: str) -> list:\n    \"\"\"\u6d4b\u8bd5\u8f85\u52a9\uff1a\u8bfb\u51fa CSV \u4e3a list[dict].\"\"\"\n    with open(path, \"r\", newline=\"\", encoding=\"utf-8\") as f:\n        return list(csv.DictReader(f))\n\n\nclass DedupeCsvCoreTests(unittest.TestCase):\n    \"\"\"\u76f4\u63a5\u6d4b\u8bd5 dedupe_csv \u6838\u5fc3\u51fd\u6570.\"\"\"\n\n    def setUp(self):\n        # \u6bcf\u4e2a\u7528\u4f8b\u72ec\u7acb\u4e34\u65f6\u76ee\u5f55\uff0c\u907f\u514d\u76f8\u4e92\u6c61\u67d3\n        self.tmpdir = tempfile.mkdtemp()\n        self.input_path = os.path.join(self.tmpdir, \"in.csv\")\n        self.output_path = os.path.join(self.tmpdir, \"out.csv\")\n\n    def test_dedupe_keeps_first_occurrence(self):\n        \"\"\"\u53bb\u91cd\u540e\u5e94\u4fdd\u7559\u6bcf\u4e2a key \u7b2c\u4e00\u6b21\u51fa\u73b0\u7684\u6574\u884c.\"\"\"\n        _write_csv(\n            self.input_path,\n            rows=[\n                {\"id\": \"1\", \"name\": \"alice\", \"age\": \"20\"},\n                {\"id\": \"2\", \"name\": \"bob\", \"age\": \"30\"},\n                {\"id\": \"1\", \"name\": \"alice-dup\", \"age\": \"99\"},  # \u91cd\u590d id=1\n                {\"id\": \"3\", \"name\": \"carol\", \"age\": \"40\"},\n            ],\n            fieldnames=[\"id\", \"name\", \"age\"],\n        )\n\n        kept = dedupe.dedupe_csv(self.input_path, self.output_path, column=\"id\")\n\n        self.assertEqual(kept, 3)\n        result = _read_csv(self.output_path)\n        # \u987a\u5e8f\u5fc5\u987b\u6309\u9996\u6b21\u51fa\u73b0\uff1a1, 2, 3\n        self.assertEqual([r[\"id\"] for r in result], [\"1\", \"2\", \"3\"])\n        # \u91cd\u590d\u884c\u7684\"\u975e key \u5217\"\u5e94\u6765\u81ea\u9996\u6b21\u51fa\u73b0\u7684\u90a3\u4e00\u884c\uff08alice\uff0c\u4e0d\u662f alice-dup\uff09\n        self.assertEqual(result[0][\"name\"], \"alice\")\n\n    def test_missing_input_file_raises(self):\n        \"\"\"\u8f93\u5165\u6587\u4ef6\u4e0d\u5b58\u5728\u5e94\u629b FileNotFoundError\uff0c\u7531 main \u5c42\u7ffb\u8bd1\u6210\u53cb\u597d\u9519\u8bef.\"\"\"\n        with self.assertRaises(FileNotFoundError):\n            dedupe.dedupe_csv(\n                os.path.join(self.tmpdir, \"nope.csv\"),\n                self.output_path,\n                column=\"id\",\n            )\n\n    def test_missing_column_raises(self):\n        \"\"\"\u6307\u5b9a\u5217\u4e0d\u5728\u8868\u5934\u4e2d\u5e94\u629b ValueError.\"\"\"\n        _write_csv(\n            self.input_path,\n            rows=[{\"id\": \"1\", \"name\": \"a\"}],\n            fieldnames=[\"id\", \"name\"],\n        )\n        with self.assertRaises(ValueError):\n            dedupe.dedupe_csv(self.input_path, self.output_path, column=\"email\")\n\n    def test_empty_csv_raises(self):\n        \"\"\"\u5b8c\u5168\u7a7a\u6587\u4ef6\u5e94\u629b ValueError\uff08\u65e0\u8868\u5934\uff09.\"\"\"\n        # \u5199\u4e00\u4e2a\u771f\u6b63\u7684\u7a7a\u6587\u4ef6\n        open(self.input_path, \"w\", encoding=\"utf-8\").close()\n        with self.assertRaises(ValueError):\n            dedupe.dedupe_csv(self.input_path, self.output_path, column=\"id\")\n\n\nclass DedupeCliTests(unittest.TestCase):\n    \"\"\"\u6d4b\u8bd5 main() CLI \u5165\u53e3\u7684\u9000\u51fa\u7801\u4e0e\u9519\u8bef\u8f93\u51fa.\"\"\"\n\n    def setUp(self):\n        self.tmpdir = tempfile.mkdtemp()\n        self.input_path = os.path.join(self.tmpdir, \"in.csv\")\n        self.output_path = os.path.join(self.tmpdir, \"out.csv\")\n\n    def test_main_happy_path_returns_zero(self):\n        \"\"\"\u6b63\u5e38\u8c03\u7528\u5e94\u8fd4\u56de 0 \u9000\u51fa\u7801\u5e76\u751f\u6210\u8f93\u51fa\u6587\u4ef6.\"\"\"\n        _write_csv(\n            self.input_path,\n            rows=[\n                {\"id\": \"1\", \"v\": \"a\"},\n                {\"id\": \"1\", \"v\": \"b\"},\n                {\"id\": \"2\", \"v\": \"c\"},\n            ],\n            fieldnames=[\"id\", \"v\"],\n        )\n        # \u6355\u83b7 stdout \u907f\u514d\u6c61\u67d3\u6d4b\u8bd5\u8f93\u51fa\n        with redirect_stdout(io.StringIO()):\n            code = dedupe.main(\n                [self.input_path, self.output_path, \"--column\", \"id\"]\n            )\n        self.assertEqual(code, 0)\n        self.assertEqual(len(_read_csv(self.output_path)), 2)\n\n    def test_main_missing_file_returns_user_error(self):\n        \"\"\"\u6587\u4ef6\u4e0d\u5b58\u5728\u65f6\u8fd4\u56de EXIT_USER_ERROR \u4e14 stderr \u6709\u53cb\u597d\u6d88\u606f.\"\"\"\n        err = io.StringIO()\n        with redirect_stderr(err):\n            code = dedupe.main(\n                [\n                    os.path.join(self.tmpdir, \"no.csv\"),\n                    self.output_path,\n                    \"--column\",\n                    \"id\",\n                ]\n            )\n        self.assertEqual(code, dedupe.EXIT_USER_ERROR)\n        self.assertIn(\"\u9519\u8bef\", err.getvalue())\n\n    def test_main_missing_column_returns_user_error(self):\n        \"\"\"\u5217\u4e0d\u5b58\u5728\u65f6\u8fd4\u56de EXIT_USER_ERROR \u4e14\u6d88\u606f\u5305\u542b\u5217\u540d\u63d0\u793a.\"\"\"\n        _write_csv(\n            self.input_path,\n            rows=[{\"id\": \"1\"}],\n            fieldnames=[\"id\"],\n        )\n        err = io.StringIO()\n        with redirect_stderr(err):\n            code = dedupe.main(\n                [self.input_path, self.output_path, \"--column\", \"nope\"]\n            )\n        self.assertEqual(code, dedupe.EXIT_USER_ERROR)\n        self.assertIn(\"nope\", err.getvalue())\n\n    def test_main_missing_required_arg_exits(self):\n        \"\"\"\u6ca1\u4f20 --column argparse \u5e94\u81ea\u5df1 sys.exit(2).\"\"\"\n        _write_csv(\n            self.input_path,\n            rows=[{\"id\": \"1\"}],\n            fieldnames=[\"id\"],\n        )\n        # argparse \u9519\u8bef\u4f1a\u76f4\u63a5 SystemExit\uff0c\u6355\u83b7\u4e4b\n        with self.assertRaises(SystemExit) as ctx:\n            with redirect_stderr(io.StringIO()):\n                dedupe.main([self.input_path, self.output_path])\n        # argparse \u7528 code=2 \u8868\u793a\u7528\u6cd5\u9519\u8bef\n        self.assertEqual(ctx.exception.code, 2)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"}, {"name": "TRANSCRIPT.md", "type": "text", "content": "# Vibe Coding Workflow \u2014 Transcript\n\n\u6309 `vibe-coding-workflow` skill \u7684 6 \u9636\u6bb5\u95ed\u73af\u5f00\u53d1 `dedupe.py` \u7684\u8fc7\u7a0b\u8bb0\u5f55\u3002\n\n---\n\n## \u7b2c 1 \u9636\u6bb5\uff1a\u9700\u6c42\u7406\u89e3\n\n**\u590d\u8ff0\u9700\u6c42**\uff1a\u5f00\u53d1 Python CLI `dedupe.py`\uff0c\u6309\u6307\u5b9a\u5217\u53bb\u91cd CSV\uff0c\u4fdd\u7559\u6bcf\u4e2a key \u9996\u6b21\u51fa\u73b0\u7684\u884c\uff1b\u547d\u4ee4\u683c\u5f0f `python dedupe.py <input.csv> <output.csv> --column <col_name>`\uff1b\u8981\u5728\u53c2\u6570\u7f3a\u5931\u3001\u6587\u4ef6\u4e0d\u5b58\u5728\u3001\u5217\u540d\u4e0d\u5b58\u5728\u65f6\u7ed9\u51fa\u53cb\u597d\u9519\u8bef\u3002\n\n**\u4e3b\u52a8\u6f84\u6e05\u7684\u5173\u952e\u5047\u8bbe**\uff08\u7528\u6237\u79bb\u7ebf\uff0c\u6309\u5408\u7406\u9ed8\u8ba4\u63a8\u8fdb\uff09\uff1a\n1. \u7528\u6807\u51c6\u5e93\uff08`csv` + `argparse`\uff09\uff0c\u4e0d\u5f15\u5165 pandas\n2. \u5168\u91cf\u52a0\u8f7d\u5230\u5185\u5b58\uff08\u5c0f\u5de5\u5177\u573a\u666f\uff1b\u4e07\u7ea7\u884c\u8db3\u591f\uff09\n3. \u8f93\u51fa CSV \u4fdd\u7559\u539f\u5217\u987a\u5e8f\u4e0e\u8868\u5934\n4. \u5217\u540d\u4e0d\u5b58\u5728\u4e5f\u7b97\"\u53cb\u597d\u9519\u8bef\"\u8303\u7574\uff08\u5408\u7406\u63a8\u65ad\uff09\n5. \u9519\u8bef\u4fe1\u606f\u5199\u5230 stderr\uff0c\u9000\u51fa\u7801\u975e 0\n\n**\u9a8c\u6536\u6807\u51c6**\uff1a\u6b63\u5e38\u53bb\u91cd + 4 \u7c7b\u9519\u8bef\u53cb\u597d\u63d0\u793a + \u5355\u5143\u6d4b\u8bd5\u8986\u76d6 + README \u8bf4\u660e\u3002\n\n---\n\n## \u7b2c 2 \u9636\u6bb5\uff1aPlan\uff08\u65b9\u6848\u8bbe\u8ba1\uff09\n\n\u63d0\u51fa 3 \u4e2a\u65b9\u6848\uff1a\n- **A\uff08\u63a8\u8350\uff09**\uff1a\u6807\u51c6\u5e93 `csv.DictReader` + \u5185\u5b58 `set` \u5224\u91cd \u2014\u2014 \u96f6\u4f9d\u8d56\u3001\u7b80\u6d01\u3001\u8d34\u5408\u9700\u6c42\n- **B**\uff1apandas `drop_duplicates` \u2014\u2014 \u5f15\u5165\u5927\u4f9d\u8d56\uff0c\u6740\u9e21\u725b\u5200\n- **C**\uff1a\u6d41\u5f0f\u5904\u7406 \u2014\u2014 \u5927\u6587\u4ef6\u53cb\u597d\uff0c\u4f46\u5c5e\u4e8e\u8fc7\u5ea6\u8bbe\u8ba1\n\n**\u7528\u6237\u51b3\u7b56\uff08\u6a21\u62df\uff09**\uff1a\u6309\u65b9\u6848 A \u8d70\u3002\n\n**\u6587\u4ef6\u6e05\u5355**\uff1a\u65b0\u5efa `dedupe.py`\u3001`test_dedupe.py`\u3001`README.md`\u3002\n\n---\n\n## \u7b2c 3 \u9636\u6bb5\uff1a\u7f16\u7801\u5b9e\u73b0\n\n\u6309 Plan \u9010\u6587\u4ef6\u843d\u5730\uff1a\n1. `dedupe.py`\uff1a\n   - `_build_parser()` \u62bd\u51fa argparse \u914d\u7f6e\u4fbf\u4e8e\u6d4b\u8bd5\u590d\u7528\n   - `dedupe_csv()` \u6838\u5fc3\u51fd\u6570\uff0c\u5904\u7406\u6587\u4ef6\u4e0d\u5b58\u5728\u3001\u7a7a\u6587\u4ef6\u3001\u5217\u4e0d\u5b58\u5728\u4e09\u7c7b\u6821\u9a8c\uff0c\u8fd4\u56de kept \u884c\u6570\n   - `main()` \u628a\u5f02\u5e38\u7ffb\u8bd1\u6210 stderr + \u975e\u96f6\u9000\u51fa\u7801\n   - \u6ce8\u91ca\u53ea\u5199 WHY \u4e0e\u7ea6\u675f\uff08\u9075\u5faa CLAUDE.md \"\u52a0\u6ce8\u91ca\"\u8981\u6c42 + review checklist \u7684\u6ce8\u91ca\u89c4\u8303\uff09\n2. `test_dedupe.py`\uff1a\u89c1\u4e0b\u4e00\u9636\u6bb5\n\n---\n\n## \u7b2c 4 \u9636\u6bb5\uff1a\u6d4b\u8bd5\u9a8c\u8bc1\n\n\u5199\u4e86 8 \u4e2a unittest \u7528\u4f8b\uff1a\n\n**\u6838\u5fc3\u51fd\u6570\u5c42**\uff1a\n- `test_dedupe_keeps_first_occurrence`\uff1a\u53bb\u91cd + \u987a\u5e8f + \u9996\u6b21\u51fa\u73b0\u6574\u884c\n- `test_missing_input_file_raises`\uff1aFileNotFoundError\n- `test_missing_column_raises`\uff1aValueError\n- `test_empty_csv_raises`\uff1a\u7a7a\u6587\u4ef6 ValueError\n\n**CLI \u5c42**\uff1a\n- `test_main_happy_path_returns_zero`\uff1a\u9000\u51fa\u7801 0\n- `test_main_missing_file_returns_user_error`\uff1a\u9000\u51fa\u7801 2 + stderr \u6709 \"\u9519\u8bef\"\n- `test_main_missing_column_returns_user_error`\uff1a\u9000\u51fa\u7801 2 + stderr \u542b\u5217\u540d\n- `test_main_missing_required_arg_exits`\uff1aargparse SystemExit(2)\n\n**\u6267\u884c\u60c5\u51b5**\uff1a\u672c\u4f1a\u8bdd\u6c99\u76d2\u62d2\u7edd\u4e86\u6240\u6709 `python` \u8c03\u7528\uff08Bash / PowerShell \u5747\u65e0\u6743\u9650\u8fd0\u884c\uff09\uff0c\u672a\u80fd\u5728\u4f1a\u8bdd\u5185\u6253\u5370\u5b9e\u9645\u901a\u8fc7\u7ed3\u679c\u3002\u5df2\u901a\u8fc7\u5bf9\u6d4b\u8bd5\u4e0e\u5b9e\u73b0\u7684\u4eba\u5de5 trace \u9010\u9879\u9a8c\u8bc1\u903b\u8f91\u81ea\u6d3d\uff1a\n- \u6240\u6709\u65ad\u8a00\u5bf9\u5e94\u7684\u5b9e\u73b0\u8def\u5f84\u5747\u5df2\u5b58\u5728\n- `os.path.isfile` \u2192 `FileNotFoundError`\n- `column not in fieldnames` \u2192 `ValueError`\n- \u7a7a\u6587\u4ef6 \u2192 `reader.fieldnames is None` \u2192 `ValueError`\n- argparse \u7f3a\u53c2 \u2192 \u81ea\u52a8 `SystemExit(2)`\n\n\u8bf7\u5728\u672c\u5730\u6267\u884c `python -m unittest test_dedupe -v` \u590d\u8dd1\u786e\u8ba4\u3002\n\n---\n\n## \u7b2c 5 \u9636\u6bb5\uff1aCode Review\uff08\u81ea\u67e5\uff09\n\n| \u7ef4\u5ea6 | \u5206\u6570 | \u5173\u952e\u95ee\u9898 |\n|------|------|----------|\n| \u6b63\u786e\u6027 | 5 | 4 \u7c7b\u9519\u8bef\u5168\u8986\u76d6\uff1b\u9996\u6b21\u51fa\u73b0\u8bed\u4e49\u6b63\u786e |\n| \u53ef\u8bfb\u6027 | 5 | \u51fd\u6570\u804c\u8d23\u5355\u4e00\u3001\u6ce8\u91ca\u5199 WHY |\n| \u6027\u80fd | 4 | \u5185\u5b58\u5168\u91cf\u52a0\u8f7d\uff08\u9700\u6c42\u5916\u4e0d\u4f18\u5316\uff09 |\n| \u5b89\u5168 | 4 | \u8f93\u51fa\u4f1a\u9759\u9ed8\u8986\u76d6\uff08CLI \u5e38\u6001\u884c\u4e3a\uff0c\u53ef\u63a5\u53d7\uff09 |\n| \u5f02\u5e38\u5904\u7406 | 5 | \u7528\u6237\u9519\u8bef vs \u7cfb\u7edf\u9519\u8bef\u533a\u5206\u6e05\u6670 |\n| \u6d4b\u8bd5\u8986\u76d6 | 5 | \u6b63\u5e38 + 4 \u8fb9\u754c\u573a\u666f |\n| \u98ce\u683c\u4e00\u81f4\u6027 | 5 | \u5168\u65b0\u9879\u76ee\uff0cPEP8 \u81ea\u6d3d |\n\n**Top 3 \u5173\u6ce8\u70b9**\uff1a\n1. \u6d4b\u8bd5\u672a\u5728\u672c\u4f1a\u8bdd\u5b9e\u9645\u8dd1\u901a\uff08\u73af\u5883\u53d7\u9650\uff09\uff0c\u9700\u672c\u5730\u590d\u8dd1\n2. \u8f93\u51fa\u6587\u4ef6\u8986\u76d6\u884c\u4e3a\u7b26\u5408 Unix CLI \u60ef\u4f8b\uff0c\u4e0d\u4fee\n3. \u5927\u6587\u4ef6\u672a\u4f18\u5316\uff0c\u9700\u6c42\u5916\uff0c\u4e0d\u4fee\n\n**\u5efa\u8bae\u7b2c\u4e8c\u610f\u89c1**\uff1a\u672c\u5730\u7528 `codex > review dedupe.py \u7684\u5b89\u5168/\u6027\u80fd/\u5f02\u5e38\u5904\u7406` \u505a\u76f2\u5ba1\u3002\n\n---\n\n## \u7b2c 6 \u9636\u6bb5\uff1a\u63d0\u4ea4\u90e8\u7f72\n\n\u6309 simulation \u89c4\u5219\u4e0d\u6267\u884c git\u3002\u5df2\u5728 `COMMIT_PLAN.md` \u5217\u51fa\uff1a\n- \u63d0\u4ea4\u6587\u4ef6\uff1a`dedupe.py`\u3001`test_dedupe.py`\u3001`README.md`\n- \u82f1\u6587 commit message\uff08\u9075\u5faa CLAUDE.md rule 7\uff09\n- \u7559\u5728\u5f53\u524d\u5206\u652f\uff08\u9075\u5faa CLAUDE.md rule 6\uff09\n\n**\u6a21\u62df\u7528\u6237\u786e\u8ba4**\uff1a\"\u63d0\u4ea4\" \u2192 \u5728\u771f\u5b9e\u73af\u5883\u4f1a\u6267\u884c `git add` + `git commit`\uff0c\u4e0d push\u3001\u4e0d\u5efa PR\u3002\n"}], "grading": {"eval_name": "eval-1-csv-dedupe-cli", "configuration": "with_skill", "expectations": [{"text": "dedupe.py \u6587\u4ef6\u5b58\u5728\u4e14\u975e\u7a7a", "passed": true, "evidence": "size=4317"}, {"text": "\u6d4b\u8bd5\u6587\u4ef6\u5b58\u5728\uff08test_*.py \u6216 *_test.py\uff09", "passed": true, "evidence": "matches=['test_dedupe.py']"}, {"text": "README.md \u5b58\u5728", "passed": true, "evidence": "files=['README.md']"}, {"text": "TRANSCRIPT.md \u63d0\u5230 Plan/\u65b9\u6848/\u9636\u6bb5\uff08\u8bf4\u660e\u8d70\u4e86\u6d41\u7a0b\uff09", "passed": true, "evidence": "# Vibe Coding Workflow \u2014 Transcript\n\n\u6309 `vibe-coding-workflow` skill \u7684 6 \u9636\u6bb5\u95ed\u73af\u5f00\u53d1 `dedupe.py` \u7684\u8fc7\u7a0b\u8bb0\u5f55\u3002\n\n---\n\n## \u7b2c 1 \u9636\u6bb5\uff1a\u9700\u6c42\u7406\u89e3\n\n"}, {"text": "COMMIT_PLAN.md \u5b58\u5728", "passed": true, "evidence": "size=1361"}, {"text": "Commit message \u662f\u82f1\u6587\uff08\u4e0d\u542b\u4e2d\u6587\uff09", "passed": true, "evidence": "dedupe.py\ntest_dedupe.py\nREADME.md\nfeat(dedupe): add CSV column-based deduplication CLI"}, {"text": "\u6d4b\u8bd5\u8986\u76d6\u81f3\u5c11 2 \u4e2a\u8fb9\u754c\u573a\u666f\u5173\u952e\u8bcd", "passed": true, "evidence": "edge_keyword_hits=5"}], "passed": 7, "total": 7, "pass_rate": 1.0}}, {"id": "eval-1-csv-dedupe-cli-without_skill", "prompt": "\u6211\u8981\u5728\u5f53\u524d\u76ee\u5f55\u5f00\u53d1\u4e00\u4e2a Python CLI \u5c0f\u5de5\u5177 dedupe.py\uff1a\u8bfb\u5165\u4e00\u4e2a CSV \u6587\u4ef6\uff0c\u6309\u6307\u5b9a\u5217\u53bb\u91cd\uff0c\u8f93\u51fa\u5230\u65b0 CSV\u3002\u547d\u4ee4\u683c\u5f0f\uff1apython dedupe.py <input.csv> <output.csv> --column <col_name>\u3002\u8981\u6c42\u4fdd\u7559\u9996\u6b21\u51fa\u73b0\u7684\u884c\uff0c\u547d\u4ee4\u884c\u53c2\u6570\u7f3a\u5931\u6216\u6587\u4ef6\u4e0d\u5b58\u5728\u65f6\u7ed9\u51fa\u53cb\u597d\u9519\u8bef\u3002\u8bf7\u5e2e\u6211\u4ece\u96f6\u5f00\u53d1\u5230\u53ef\u63d0\u4ea4\u3002\u6ce8\u610f\uff1a\u8fd9\u662f\u4e2a\u5168\u65b0\u7a7a\u76ee\u5f55\uff0c\u6ca1\u6709\u73b0\u6210\u4ee3\u7801\u3002", "eval_id": 1, "outputs": [{"name": "COMMIT_PLAN.md", "type": "text", "content": "# Commit Plan\n\n## Files to commit\n\n- `dedupe.py` - CLI tool that deduplicates a CSV by a specified column, keeping the first occurrence.\n- `test_dedupe.py` - Unittest-based end-to-end tests covering happy path and error cases.\n- `README.md` - Usage, example, error-handling notes, and test instructions.\n\n## Suggested commit message\n\n```\nAdd dedupe.py CLI for column-based CSV deduplication\n\n- Implement dedupe.py: read input CSV, drop later duplicates by a chosen\n  column via DictReader/DictWriter, preserve header order.\n- Handle missing args, missing files, unknown columns, empty files, and\n  decoding/permission errors with friendly messages and non-zero exits.\n- Add test_dedupe.py covering keep-first behavior, missing input file,\n  missing --column, missing positional args, unknown column, empty file.\n- Add README.md with usage example, error behavior, and test instructions.\n```\n"}, {"name": "dedupe.py", "type": "text", "content": "#!/usr/bin/env python3\n# -*- coding: utf-8 -*-\n\"\"\"\ndedupe.py - A CLI tool to deduplicate rows in a CSV file by a specified column.\n\nUsage:\n    python dedupe.py <input.csv> <output.csv> --column <col_name>\n\nBehavior:\n    - Reads the input CSV file.\n    - Removes duplicate rows based on the specified column.\n    - Keeps the first occurrence of each unique value.\n    - Writes the deduplicated rows to the output CSV file.\n    - Provides friendly error messages for missing arguments, missing files,\n      or missing columns.\n\"\"\"\n\nimport argparse  # For parsing command-line arguments\nimport csv       # For reading and writing CSV files\nimport os        # For checking file existence\nimport sys       # For exiting with a non-zero status code on error\n\n\ndef parse_args():\n    \"\"\"\n    Parse command-line arguments.\n\n    Returns:\n        argparse.Namespace: Parsed arguments containing input, output, and column.\n    \"\"\"\n    # Create the argument parser with a friendly description and usage example\n    parser = argparse.ArgumentParser(\n        prog=\"dedupe.py\",\n        description=\"Deduplicate rows in a CSV file by a specified column, \"\n                    \"keeping the first occurrence.\",\n        epilog=\"Example: python dedupe.py input.csv output.csv --column email\",\n    )\n\n    # Positional argument: path to the input CSV file\n    parser.add_argument(\n        \"input\",\n        help=\"Path to the input CSV file.\"\n    )\n\n    # Positional argument: path to the output CSV file\n    parser.add_argument(\n        \"output\",\n        help=\"Path to the output CSV file.\"\n    )\n\n    # Required option: the column name used to detect duplicates\n    parser.add_argument(\n        \"--column\",\n        required=True,\n        help=\"Name of the column used to identify duplicate rows.\"\n    )\n\n    # argparse will automatically print a friendly error and exit(2) if\n    # required arguments are missing.\n    return parser.parse_args()\n\n\ndef dedupe_csv(input_path, output_path, column):\n    \"\"\"\n    Deduplicate the input CSV by the specified column and write to output.\n\n    Args:\n        input_path (str): Path to the input CSV file.\n        output_path (str): Path to the output CSV file.\n        column (str): Column name used to detect duplicates.\n\n    Raises:\n        FileNotFoundError: If the input file does not exist.\n        ValueError: If the column is not found in the CSV header.\n    \"\"\"\n    # Friendly check for the input file's existence before opening it\n    if not os.path.isfile(input_path):\n        raise FileNotFoundError(\n            f\"Input file not found: '{input_path}'. \"\n            \"Please check the path and try again.\"\n        )\n\n    # Track already-seen values of the dedupe column\n    seen = set()\n\n    # Open input for reading and output for writing using UTF-8 with newline=''\n    # (the recommended way for the csv module to handle line endings correctly).\n    with open(input_path, \"r\", newline=\"\", encoding=\"utf-8\") as infile, \\\n            open(output_path, \"w\", newline=\"\", encoding=\"utf-8\") as outfile:\n\n        # Use DictReader so we can address columns by name\n        reader = csv.DictReader(infile)\n\n        # Validate that the file actually has a header row\n        if reader.fieldnames is None:\n            raise ValueError(\n                f\"Input file '{input_path}' appears to be empty or has no header row.\"\n            )\n\n        # Validate that the requested column exists in the header\n        if column not in reader.fieldnames:\n            raise ValueError(\n                f\"Column '{column}' not found in CSV header. \"\n                f\"Available columns: {', '.join(reader.fieldnames)}\"\n            )\n\n        # Use DictWriter mirroring the input header to preserve column order\n        writer = csv.DictWriter(outfile, fieldnames=reader.fieldnames)\n        writer.writeheader()\n\n        # Iterate row by row; keep only the first occurrence per dedupe key\n        kept = 0\n        dropped = 0\n        for row in reader:\n            key = row.get(column)\n            if key in seen:\n                # Duplicate value -> skip this row\n                dropped += 1\n                continue\n            seen.add(key)\n            writer.writerow(row)\n            kept += 1\n\n    # Report a short, friendly summary to stdout\n    print(\n        f\"Done. Kept {kept} unique row(s), dropped {dropped} duplicate(s). \"\n        f\"Output written to: {output_path}\"\n    )\n\n\ndef main():\n    \"\"\"\n    Entry point: parse arguments, run dedupe, and translate exceptions into\n    friendly error messages with a non-zero exit code.\n    \"\"\"\n    # Parse args first; argparse handles missing-argument errors for us.\n    args = parse_args()\n\n    try:\n        dedupe_csv(args.input, args.output, args.column)\n    except FileNotFoundError as e:\n        # Friendly error for missing input file\n        print(f\"Error: {e}\", file=sys.stderr)\n        sys.exit(1)\n    except ValueError as e:\n        # Friendly error for missing column or empty file\n        print(f\"Error: {e}\", file=sys.stderr)\n        sys.exit(1)\n    except PermissionError as e:\n        # Friendly error if we cannot read input or write output\n        print(f\"Error: Permission denied: {e}\", file=sys.stderr)\n        sys.exit(1)\n    except UnicodeDecodeError as e:\n        # Friendly error if the file is not valid UTF-8\n        print(\n            f\"Error: Could not decode '{args.input}' as UTF-8. Details: {e}\",\n            file=sys.stderr,\n        )\n        sys.exit(1)\n    except OSError as e:\n        # Catch-all for other I/O errors (disk full, invalid path, etc.)\n        print(f\"Error: I/O error: {e}\", file=sys.stderr)\n        sys.exit(1)\n\n\n# Standard Python entry-point guard\nif __name__ == \"__main__\":\n    main()\n"}, {"name": "README.md", "type": "text", "content": "# dedupe.py\n\nA tiny Python CLI tool that removes duplicate rows from a CSV file based on a\nspecified column, keeping the first occurrence of each unique value.\n\n## Requirements\n\n- Python 3.7+ (uses only the standard library: `argparse`, `csv`, `os`, `sys`)\n\n## Usage\n\n```bash\npython dedupe.py <input.csv> <output.csv> --column <col_name>\n```\n\n### Example\n\nGiven `input.csv`:\n\n```csv\nid,name\n1,Alice\n2,Bob\n1,Alice-Duplicate\n3,Carol\n```\n\nRun:\n\n```bash\npython dedupe.py input.csv output.csv --column id\n```\n\nYou get `output.csv`:\n\n```csv\nid,name\n1,Alice\n2,Bob\n3,Carol\n```\n\n## Error handling\n\nThe tool prints a friendly message and exits with a non-zero status when:\n\n- Required arguments are missing (handled by `argparse`).\n- The input file does not exist.\n- The requested column is not present in the CSV header.\n- The input file is empty or has no header row.\n- The file cannot be decoded as UTF-8, or there is a permission/I/O error.\n\n## Running the tests\n\n```bash\npython -m unittest test_dedupe.py -v\n```\n"}, {"name": "test_dedupe.py", "type": "text", "content": "#!/usr/bin/env python3\n# -*- coding: utf-8 -*-\n\"\"\"\ntest_dedupe.py - Basic tests for dedupe.py.\n\nRun with:\n    python -m pytest test_dedupe.py -v\nor simply:\n    python test_dedupe.py\n\"\"\"\n\nimport csv          # For building/reading CSV fixtures\nimport os           # For path operations\nimport subprocess   # For invoking dedupe.py as a CLI subprocess\nimport sys          # To use the same Python interpreter\nimport tempfile     # For isolated temporary directories\nimport unittest     # Standard library test framework\n\n\n# Absolute path to the dedupe.py script under test (same folder as this file)\nSCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"dedupe.py\")\n\n\ndef run_cli(*args):\n    \"\"\"\n    Helper: run `python dedupe.py <args...>` and return the CompletedProcess.\n    \"\"\"\n    return subprocess.run(\n        [sys.executable, SCRIPT, *args],\n        capture_output=True,\n        text=True,\n    )\n\n\ndef write_csv(path, rows, fieldnames):\n    \"\"\"\n    Helper: write `rows` (list of dicts) to `path` with the given `fieldnames`.\n    \"\"\"\n    with open(path, \"w\", newline=\"\", encoding=\"utf-8\") as f:\n        writer = csv.DictWriter(f, fieldnames=fieldnames)\n        writer.writeheader()\n        writer.writerows(rows)\n\n\ndef read_csv(path):\n    \"\"\"\n    Helper: read a CSV file and return (fieldnames, list_of_row_dicts).\n    \"\"\"\n    with open(path, \"r\", newline=\"\", encoding=\"utf-8\") as f:\n        reader = csv.DictReader(f)\n        return reader.fieldnames, list(reader)\n\n\nclass DedupeCliTests(unittest.TestCase):\n    \"\"\"End-to-end tests that invoke dedupe.py as a real CLI.\"\"\"\n\n    def setUp(self):\n        # Create a fresh temp directory for each test for isolation\n        self.tmp = tempfile.mkdtemp()\n        self.input_path = os.path.join(self.tmp, \"in.csv\")\n        self.output_path = os.path.join(self.tmp, \"out.csv\")\n\n    def test_keeps_first_occurrence(self):\n        \"\"\"Duplicate rows by the chosen column should drop later occurrences.\"\"\"\n        write_csv(\n            self.input_path,\n            rows=[\n                {\"id\": \"1\", \"name\": \"Alice\"},\n                {\"id\": \"2\", \"name\": \"Bob\"},\n                {\"id\": \"1\", \"name\": \"Alice-Duplicate\"},  # should be dropped\n                {\"id\": \"3\", \"name\": \"Carol\"},\n                {\"id\": \"2\", \"name\": \"Bob-Duplicate\"},    # should be dropped\n            ],\n            fieldnames=[\"id\", \"name\"],\n        )\n\n        result = run_cli(self.input_path, self.output_path, \"--column\", \"id\")\n        self.assertEqual(result.returncode, 0, msg=result.stderr)\n\n        fieldnames, rows = read_csv(self.output_path)\n        # Column order should be preserved\n        self.assertEqual(fieldnames, [\"id\", \"name\"])\n        # Only first occurrences should remain\n        self.assertEqual(\n            rows,\n            [\n                {\"id\": \"1\", \"name\": \"Alice\"},\n                {\"id\": \"2\", \"name\": \"Bob\"},\n                {\"id\": \"3\", \"name\": \"Carol\"},\n            ],\n        )\n\n    def test_missing_input_file(self):\n        \"\"\"A missing input file should produce a friendly error and exit code 1.\"\"\"\n        missing = os.path.join(self.tmp, \"does_not_exist.csv\")\n        result = run_cli(missing, self.output_path, \"--column\", \"id\")\n        self.assertNotEqual(result.returncode, 0)\n        self.assertIn(\"not found\", result.stderr.lower())\n\n    def test_missing_column_argument(self):\n        \"\"\"Missing --column should be caught by argparse with a non-zero exit.\"\"\"\n        write_csv(\n            self.input_path,\n            rows=[{\"id\": \"1\", \"name\": \"Alice\"}],\n            fieldnames=[\"id\", \"name\"],\n        )\n        # Call without --column at all\n        result = run_cli(self.input_path, self.output_path)\n        self.assertNotEqual(result.returncode, 0)\n        # argparse writes its usage/error to stderr\n        self.assertIn(\"--column\", result.stderr)\n\n    def test_missing_positional_arguments(self):\n        \"\"\"Missing positional args should be caught by argparse.\"\"\"\n        result = run_cli()  # no arguments at all\n        self.assertNotEqual(result.returncode, 0)\n        self.assertIn(\"usage\", result.stderr.lower())\n\n    def test_unknown_column(self):\n        \"\"\"A column not present in the header should produce a friendly error.\"\"\"\n        write_csv(\n            self.input_path,\n            rows=[{\"id\": \"1\", \"name\": \"Alice\"}],\n            fieldnames=[\"id\", \"name\"],\n        )\n        result = run_cli(self.input_path, self.output_path, \"--column\", \"email\")\n        self.assertNotEqual(result.returncode, 0)\n        self.assertIn(\"not found\", result.stderr.lower())\n\n    def test_empty_file(self):\n        \"\"\"An empty input file should produce a friendly error.\"\"\"\n        # Create a completely empty file\n        open(self.input_path, \"w\", encoding=\"utf-8\").close()\n        result = run_cli(self.input_path, self.output_path, \"--column\", \"id\")\n        self.assertNotEqual(result.returncode, 0)\n        self.assertIn(\"empty\", result.stderr.lower())\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"}, {"name": "TRANSCRIPT.md", "type": "text", "content": "# Transcript\n\nSteps taken to implement the CSV dedupe CLI from scratch:\n\n1. **Confirmed the working directory** was the empty `outputs/` folder and that\n   no prior code existed.\n2. **Designed the CLI surface** to match the required spec:\n   `python dedupe.py <input.csv> <output.csv> --column <col_name>` using\n   `argparse` (two positionals + one required `--column` option). Relied on\n   argparse for missing-argument errors so messages stay consistent.\n3. **Implemented `dedupe.py`**:\n   - `parse_args()` builds the argparse parser with a friendly description.\n   - `dedupe_csv()` validates that the input file exists, uses `csv.DictReader`\n     to iterate rows, validates the chosen column is in the header, and writes\n     unique rows via `csv.DictWriter`, tracking seen keys in a `set` so the\n     first occurrence wins.\n   - `main()` wraps the call and translates `FileNotFoundError`, `ValueError`,\n     `PermissionError`, `UnicodeDecodeError`, and other `OSError`s into clear\n     stderr messages with `sys.exit(1)`.\n   - Added module/function docstrings and inline comments per project rules.\n4. **Wrote `test_dedupe.py`** (stdlib `unittest` + `subprocess`) to invoke the\n   script as a real CLI and cover:\n   - Keep-first deduplication behavior and header preservation.\n   - Missing input file.\n   - Missing `--column` option.\n   - Missing positional arguments.\n   - Unknown column name.\n   - Empty input file.\n5. **Wrote `README.md`** documenting usage, an example, error behavior, and\n   how to run the tests.\n6. **Wrote `COMMIT_PLAN.md`** listing files and a proposed commit message\n   (no git commands were executed, per instructions).\n\n## Notes / assumptions\n\n- Assumed UTF-8 encoded CSVs (common default); surface a clear error otherwise.\n- Assumed the deduplication key is the raw string value of the column as read\n  by `csv.DictReader` (no trimming / case-folding). This matches the literal\n  spec and avoids silent behavior changes.\n- Preserved input column order in the output by mirroring `reader.fieldnames`.\n"}], "grading": {"eval_name": "eval-1-csv-dedupe-cli", "configuration": "without_skill", "expectations": [{"text": "dedupe.py \u6587\u4ef6\u5b58\u5728\u4e14\u975e\u7a7a", "passed": true, "evidence": "size=5702"}, {"text": "\u6d4b\u8bd5\u6587\u4ef6\u5b58\u5728\uff08test_*.py \u6216 *_test.py\uff09", "passed": true, "evidence": "matches=['test_dedupe.py']"}, {"text": "README.md \u5b58\u5728", "passed": true, "evidence": "files=['README.md']"}, {"text": "TRANSCRIPT.md \u63d0\u5230 Plan/\u65b9\u6848/\u9636\u6bb5\uff08\u8bf4\u660e\u8d70\u4e86\u6d41\u7a0b\uff09", "passed": false, "evidence": "# Transcript\n\nSteps taken to implement the CSV dedupe CLI from scratch:\n\n1. **Confirmed the working directory** was the "}, {"text": "COMMIT_PLAN.md \u5b58\u5728", "passed": true, "evidence": "size=891"}, {"text": "Commit message \u662f\u82f1\u6587\uff08\u4e0d\u542b\u4e2d\u6587\uff09", "passed": true, "evidence": "dedupe.py\ntest_dedupe.py\nREADME.md"}, {"text": "\u6d4b\u8bd5\u8986\u76d6\u81f3\u5c11 2 \u4e2a\u8fb9\u754c\u573a\u666f\u5173\u952e\u8bcd", "passed": true, "evidence": "edge_keyword_hits=3"}], "passed": 6, "total": 7, "pass_rate": 0.8571428571428571}}, {"id": "eval-2-express-health-with_skill", "prompt": "\u5728\u5f53\u524d\u7a7a\u76ee\u5f55\u4ece\u96f6\u642d\u4e00\u4e2a\u6700\u5c0f Express \u9879\u76ee\uff0c\u5b9e\u73b0 GET /health \u63a5\u53e3\uff0c\u8fd4\u56de {status:'ok', uptime: <\u8fdb\u7a0b\u8fd0\u884c\u79d2\u6570>, timestamp: <ISO \u5b57\u7b26\u4e32>}\u3002\u8981\u6c42\uff1a\u4f7f\u7528 Express 4.x\uff0c\u52a0 jest \u5355\u5143\u6d4b\u8bd5\u8986\u76d6\u54cd\u5e94\u5b57\u6bb5\uff0c\u63d0\u4f9b package.json\uff0cREADME \u5199\u660e\u542f\u52a8\u65b9\u5f0f\u3002\u8bf7\u5e2e\u6211\u4ece\u96f6\u505a\u5230\u53ef\u63d0\u4ea4\u3002", "eval_id": 2, "outputs": [{"name": "app.js", "type": "text", "content": "// app.js\n// WHY: Export the Express app without calling listen() so unit tests can\n// drive it via supertest without binding a TCP port. The actual HTTP\n// server bootstrap lives in server.js.\n\nconst express = require('express');\n\n// Factory keeps construction explicit and avoids hidden shared state\n// between tests that may require fresh instances in the future.\nfunction createApp() {\n  const app = express();\n\n  // GET /health\n  // WHY: Returns a simple liveness payload that is cheap to compute, so\n  // load balancers / orchestrators can probe at high frequency.\n  // - status:    fixed string 'ok' (this endpoint never reports failure;\n  //              if the process is down, the probe will fail to connect)\n  // - uptime:    process.uptime() returns fractional seconds since the\n  //              Node process started \u2014 exactly what callers asked for\n  // - timestamp: ISO 8601 string for log/timeseries correlation\n  app.get('/health', (req, res) => {\n    res.json({\n      status: 'ok',\n      uptime: process.uptime(),\n      timestamp: new Date().toISOString(),\n    });\n  });\n\n  return app;\n}\n\nmodule.exports = { createApp };\n"}, {"name": "COMMIT_PLAN.md", "type": "text", "content": "# Commit Plan\n\nPer CLAUDE.md: use the current branch, do not create a new one, do not\npush, and use an English commit message. The user should review this\nplan and confirm before running the git commands.\n\n## Files to stage\n\n- `package.json`\n- `app.js`\n- `server.js`\n- `__tests__/health.test.js`\n- `README.md`\n\n(TRANSCRIPT.md and COMMIT_PLAN.md are workflow artifacts and should\nNOT be part of the project commit.)\n\n## Proposed git commands\n\n```bash\ngit add package.json app.js server.js __tests__/health.test.js README.md\ngit commit -m \"feat(health): add minimal Express service with GET /health endpoint\n\n- Add app.js exposing GET /health returning {status, uptime, timestamp}\n- Add server.js bootstrap listening on PORT (default 3000)\n- Add jest + supertest tests covering all three response fields\n- Add README with install, start, and test instructions\"\ngit status\n```\n\n## Commit message (single-line variant, if preferred)\n\n```\nfeat(health): add minimal Express service with GET /health endpoint\n```\n"}, {"name": "package.json", "type": "text", "content": "{\n  \"name\": \"express-health-service\",\n  \"version\": \"1.0.0\",\n  \"description\": \"Minimal Express service exposing GET /health\",\n  \"main\": \"server.js\",\n  \"scripts\": {\n    \"start\": \"node server.js\",\n    \"test\": \"jest\"\n  },\n  \"keywords\": [\n    \"express\",\n    \"health\",\n    \"healthcheck\"\n  ],\n  \"author\": \"\",\n  \"license\": \"MIT\",\n  \"dependencies\": {\n    \"express\": \"^4.19.2\"\n  },\n  \"devDependencies\": {\n    \"jest\": \"^29.7.0\",\n    \"supertest\": \"^7.0.0\"\n  }\n}\n"}, {"name": "README.md", "type": "text", "content": "# express-health-service\n\nMinimal Express 4.x service exposing a single `GET /health` endpoint, intended\nas a starting point for liveness probes.\n\n## Tech stack\n\n- Node.js (>= 14 recommended)\n- Express 4.x\n- Jest + supertest (dev)\n\n## Project layout\n\n```\n.\n\u251c\u2500\u2500 app.js                  # Express app factory (no listen)\n\u251c\u2500\u2500 server.js               # HTTP bootstrap (calls listen)\n\u251c\u2500\u2500 __tests__/\n\u2502   \u2514\u2500\u2500 health.test.js      # Jest + supertest contract tests\n\u251c\u2500\u2500 package.json\n\u2514\u2500\u2500 README.md\n```\n\n## Install\n\n```bash\nnpm install\n```\n\n## Run\n\n```bash\nnpm start\n# or with a custom port:\nPORT=8080 npm start\n```\n\nThe service then responds on `http://localhost:3000/health` (or your chosen\nport).\n\n## API\n\n### `GET /health`\n\nReturns the current process liveness snapshot.\n\n**Response 200**\n\n```json\n{\n  \"status\": \"ok\",\n  \"uptime\": 12.345,\n  \"timestamp\": \"2026-05-19T10:00:00.000Z\"\n}\n```\n\n| Field      | Type   | Notes                                              |\n|------------|--------|----------------------------------------------------|\n| status     | string | Always `\"ok\"` while the process is serving traffic |\n| uptime     | number | Seconds since the Node process started             |\n| timestamp  | string | ISO 8601 timestamp at the moment of the response   |\n\n## Test\n\n```bash\nnpm test\n```\n\nThe Jest suite drives the app via supertest, so no port is opened during\ntesting.\n"}, {"name": "server.js", "type": "text", "content": "// server.js\n// WHY: Thin bootstrap that turns the pure Express app (app.js) into a\n// running HTTP server. Kept separate so tests can import the app\n// without a port being bound.\n\nconst { createApp } = require('./app');\n\n// PORT is read from env to ease container deployment; default 3000\n// matches the Express convention so README instructions stay short.\nconst PORT = process.env.PORT || 3000;\n\nconst app = createApp();\n\napp.listen(PORT, () => {\n  // Single startup log \u2014 intentionally minimal so it doesn't pollute\n  // structured logging pipelines in production.\n  console.log(`Health service listening on http://localhost:${PORT}`);\n});\n"}, {"name": "TRANSCRIPT.md", "type": "text", "content": "# Vibe Coding Workflow \u2014 TRANSCRIPT\n\nTask: build a minimal Express 4.x project exposing `GET /health` returning\n`{status, uptime, timestamp}`, with jest tests, package.json, and a README,\nfrom an empty directory, ready to commit.\n\nThe six stages defined by `vibe-coding-workflow/SKILL.md` were followed.\n\n---\n\n## Stage 1 \u2014 Requirement understanding\n\nRestated user intent: deliver a minimal, runnable Express 4.x project\nexposing a single GET /health endpoint that returns three fields:\n`status: 'ok'`, `uptime` (process seconds), `timestamp` (ISO string),\nwith jest unit tests covering all three fields, a package.json declaring\nthe right deps, and a README documenting how to start it.\n\nClarifying questions that would normally be asked (auto-resolved per\nsimulation rules \u2014 user says \"go / \u6309\u63a8\u8350\u65b9\u6848\u8d70\"):\n\n1. Port? \u2014 default to `3000`, overridable via `PORT` env var.\n2. `uptime` unit? \u2014 `process.uptime()` (seconds, fractional) is the\n   idiomatic Node value and matches \"\u8fdb\u7a0b\u8fd0\u884c\u79d2\u6570\".\n3. JSON shape strictness? \u2014 return exactly the three documented fields\n   and add a test guarding against accidental extra fields.\n\nAcceptance criteria:\n- `npm start` boots an Express server on port 3000.\n- `curl localhost:3000/health` returns HTTP 200 with the three fields.\n- `npm test` runs jest and exercises the three fields plus shape.\n- README documents install / start / test commands.\n\n---\n\n## Stage 2 \u2014 Plan (chosen approach)\n\nTwo candidate designs were considered:\n\n- **A. Single `server.js`** that creates the app and immediately calls\n  `listen()`. Tests would have to start/stop the server on a real port.\n  Simple but couples HTTP transport to tests, slower, can flake on\n  port conflicts.\n- **B. Split `app.js` (factory) + `server.js` (bootstrap)**. Tests\n  import the app and drive it via `supertest` without binding a port.\n  Slightly more files but cleaner separation and faster, hermetic\n  tests. This is the idiomatic Express+supertest pattern.\n\n**Picked: B.** It is the recommended Express testing pattern, adds\nnegligible complexity (one extra ~10-line file), and avoids real port\nbinding in tests.\n\nFile plan:\n- `package.json`              \u2014 deps + scripts\n- `app.js`                    \u2014 Express app factory + `/health` route\n- `server.js`                 \u2014 bootstrap that calls `listen`\n- `__tests__/health.test.js`  \u2014 jest + supertest contract tests\n- `README.md`                 \u2014 start / test instructions\n\n(No subagent was dispatched. Per `references/subagent-strategy.md` the\ntask is small, single-module, and has no independent parallelizable\nwork \u2014 direct execution is the correct choice.)\n\n---\n\n## Stage 3 \u2014 Implementation\n\nFiles created, in order:\n\n1. `package.json` \u2014 `express ^4.19.2`, `jest ^29.7.0`, `supertest ^7.0.0`;\n   `start` and `test` scripts.\n2. `app.js` \u2014 `createApp()` factory; `GET /health` handler returns\n   `{status: 'ok', uptime: process.uptime(), timestamp: new\n   Date().toISOString()}`. Comments explain WHY (separating app from\n   listen, cheap probe semantics).\n3. `server.js` \u2014 reads `PORT` env (default 3000), constructs app via\n   `createApp()`, calls `listen`, logs a single startup line.\n4. `__tests__/health.test.js` \u2014 see Stage 4.\n5. `README.md` \u2014 install / start / test / API table.\n\n---\n\n## Stage 4 \u2014 Test authoring & execution\n\nFour jest test cases were written using supertest:\n\n1. `responds 200 with status \"ok\"` \u2014 happy path.\n2. `uptime is a non-negative number` \u2014 type + finiteness + range.\n3. `timestamp is a valid ISO 8601 string` \u2014 parse + round-trip canonical\n   form equality (catches malformed strings cheaply).\n4. `response contains exactly the three documented fields` \u2014 guards\n   against accidental field leakage in future edits (edge case).\n\n**Test execution status \u2014 HONEST DISCLOSURE.**\nPer the simulation rules `npm install` was intentionally skipped (would\nbe slow / network-dependent in this sandbox), so jest was never invoked\nand the tests were **not actually executed** in this session. Shell\naccess (`Bash` / `PowerShell`) was additionally denied in the sandbox,\nso `node -c` syntax-checks could not be run either. The source files\nwere manually re-read after writing and are syntactically standard\nCommonJS \u2014 but the user should run `npm install && npm test` locally\nto confirm green before relying on the deliverable.\n\n---\n\n## Stage 5 \u2014 Code Review (self-review)\n\n| Dimension       | Score (1-5) | Notes                                               |\n|-----------------|-------------|-----------------------------------------------------|\n| Correctness     | 5           | All 3 fields produced exactly as specified.         |\n| Readability     | 5           | Short files, WHY-comments only, factory pattern.    |\n| Performance     | 5           | Endpoint is O(1); no I/O, no allocation hot-spots.  |\n| Security        | 4           | No auth on /health (intentional, standard); no PII. |\n| Error handling  | 4           | Endpoint cannot fail; no error paths needed.        |\n| Test coverage   | 5           | All 3 fields + shape guard covered.                 |\n| Style           | 5           | Idiomatic CommonJS Express, matches project conv.   |\n\nTop 3 issues to consider (none blocking):\n1. No graceful-shutdown hook on SIGTERM \u2014 acceptable for a minimal\n   sample; would be worth adding in production.\n2. `console.log` for startup rather than a structured logger \u2014 fine for\n   a minimal project, flagged for future hardening.\n3. No CI config \u2014 out of scope for \"minimal project from scratch\".\n\nNo code changes needed from self-review.\n\n(Recommendation to the user, per skill: run an independent Codex\nreview with `codex` \u2192 `review current diff, focus on security /\nexception handling / boundary cases` for a second opinion.)\n\n---\n\n## Stage 6 \u2014 Commit plan\n\nPer CLAUDE.md rules, git commands were NOT executed. Instead the\nproposed commit (single commit on the current branch, English message)\nis captured in `COMMIT_PLAN.md` for the user to execute after\nconfirmation.\n"}], "grading": {"eval_name": "eval-2-express-health", "configuration": "with_skill", "expectations": [{"text": "package.json \u5b58\u5728\u4e14\u5408\u6cd5 JSON", "passed": true, "evidence": "keys=['name', 'version', 'description', 'main', 'scripts', 'keywords']"}, {"text": "package.json \u542b express ^4.x", "passed": true, "evidence": "express=^4.19.2"}, {"text": "package.json \u542b jest \u4f9d\u8d56", "passed": true, "evidence": "jest=^29.7.0"}, {"text": "\u5165\u53e3\u542b /health \u8def\u7531", "passed": true, "evidence": "js_files=['app.js', 'server.js', '__tests__\\\\health.test.js']"}, {"text": "\u6d4b\u8bd5\u6587\u4ef6\u5b58\u5728", "passed": true, "evidence": "test_files=['__tests__\\\\health.test.js']"}, {"text": "\u6d4b\u8bd5\u8986\u76d6\u4e09\u4e2a\u5b57\u6bb5 status/uptime/timestamp", "passed": true, "evidence": "hits=['status', 'uptime', 'timestamp']"}, {"text": "README \u542b\u542f\u52a8\u547d\u4ee4\uff08npm \u6216 node\uff09", "passed": true, "evidence": "readme_len=1378"}, {"text": "COMMIT_PLAN.md \u542b\u82f1\u6587 commit message", "passed": true, "evidence": "package.json\napp.js\nserver.js\n__tests__/health.test.js\nREADME.md\nfeat(health): add minimal Express service with GET /health endpoint"}], "passed": 8, "total": 8, "pass_rate": 1.0}}, {"id": "eval-2-express-health-without_skill", "prompt": "\u5728\u5f53\u524d\u7a7a\u76ee\u5f55\u4ece\u96f6\u642d\u4e00\u4e2a\u6700\u5c0f Express \u9879\u76ee\uff0c\u5b9e\u73b0 GET /health \u63a5\u53e3\uff0c\u8fd4\u56de {status:'ok', uptime: <\u8fdb\u7a0b\u8fd0\u884c\u79d2\u6570>, timestamp: <ISO \u5b57\u7b26\u4e32>}\u3002\u8981\u6c42\uff1a\u4f7f\u7528 Express 4.x\uff0c\u52a0 jest \u5355\u5143\u6d4b\u8bd5\u8986\u76d6\u54cd\u5e94\u5b57\u6bb5\uff0c\u63d0\u4f9b package.json\uff0cREADME \u5199\u660e\u542f\u52a8\u65b9\u5f0f\u3002\u8bf7\u5e2e\u6211\u4ece\u96f6\u505a\u5230\u53ef\u63d0\u4ea4\u3002", "eval_id": 2, "outputs": [{"name": ".gitignore", "type": "binary", "mime": "application/octet-stream", "data_uri": "data:application/octet-stream;base64,bm9kZV9tb2R1bGVzLwpjb3ZlcmFnZS8KbnBtLWRlYnVnLmxvZyoKLkRTX1N0b3JlCi5lbnYK"}, {"name": "COMMIT_PLAN.md", "type": "text", "content": "# Commit Plan\n\n## Files to add\n\n- `package.json`\n- `.gitignore`\n- `README.md`\n- `src/app.js`\n- `src/server.js`\n- `tests/health.test.js`\n\n## Commit message\n\n```\nfeat: add minimal Express service with GET /health and jest tests\n\n- Express 4.x app factory exposing GET /health\n- Response includes status, process uptime (seconds), ISO timestamp\n- Jest + supertest cover content type, field types, and uptime monotonicity\n- README documents install / start / test workflow\n```\n"}, {"name": "package.json", "type": "text", "content": "{\n  \"name\": \"express-health-demo\",\n  \"version\": \"1.0.0\",\n  \"description\": \"Minimal Express service exposing GET /health\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"test\": \"jest\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.19.2\"\n  },\n  \"devDependencies\": {\n    \"jest\": \"^29.7.0\",\n    \"supertest\": \"^7.0.0\"\n  },\n  \"jest\": {\n    \"testEnvironment\": \"node\"\n  }\n}\n"}, {"name": "README.md", "type": "text", "content": "# express-health-demo\n\nA minimal Express 4.x service that exposes a `GET /health` endpoint for liveness checks.\n\n## Requirements\n\n- Node.js 18+ (uses `process.uptime()` and built-in `Date`)\n- npm\n\n## Install\n\n```bash\nnpm install\n```\n\n## Run\n\n```bash\nnpm start\n```\n\nThe server listens on `http://localhost:3000` by default. Override with the `PORT` environment variable:\n\n```bash\nPORT=8080 npm start\n```\n\n## Endpoint\n\n`GET /health` returns JSON:\n\n```json\n{\n  \"status\": \"ok\",\n  \"uptime\": 12.345,\n  \"timestamp\": \"2026-05-19T10:00:00.000Z\"\n}\n```\n\n- `status`: literal string `\"ok\"`\n- `uptime`: process uptime in seconds (number)\n- `timestamp`: current server time as an ISO 8601 string\n\n## Test\n\n```bash\nnpm test\n```\n\nJest + supertest drive the Express app in-process, covering each response field.\n\n## Project layout\n\n```\nsrc/\n  app.js      # Express app factory (no listen)\n  server.js   # Entry point that binds to a port\ntests/\n  health.test.js\npackage.json\nREADME.md\n```\n"}, {"name": "TRANSCRIPT.md", "type": "text", "content": "# Transcript\n\n## User request\nBuild a minimal Express 4.x project from scratch in this empty directory: implement `GET /health` returning `{status:'ok', uptime, timestamp}`, add a `package.json`, jest unit tests covering the response fields, and a README explaining how to start it. Make it commit-ready.\n\n## Assistant actions\n1. Verified the outputs directory was empty (Glob).\n2. Created `package.json` with Express 4.19.x runtime dep, Jest 29 + supertest 7 dev deps, `start` and `test` scripts, and Jest `node` environment config.\n3. Implemented `src/app.js` as an app factory that registers `GET /health`. The handler returns `status: 'ok'`, `process.uptime()`, and `new Date().toISOString()`.\n4. Implemented `src/server.js` as a thin entry point that calls the factory and `app.listen(PORT)` (default 3000, env-overridable).\n5. Wrote `tests/health.test.js` using supertest against the app factory (no real port). Tests cover: HTTP 200 + JSON content type; status string, uptime number >= 0, ISO timestamp round-trip; uptime non-decreasing across two calls.\n6. Wrote `README.md` (requirements, install, run, endpoint shape, test, project layout) and a small `.gitignore`.\n7. Attempted `node -c` syntax checks; shell execution was denied in this sandbox, so the check was skipped. Files were written using straightforward Node patterns and reviewed by reading back through them in the editor.\n8. Produced `COMMIT_PLAN.md` with the file list and a conventional-commit message (no git commands run per instructions).\n\n## Notes / deviations\n- `npm install` skipped per instructions; declared deps are correct for Express 4.x + Jest.\n- Shell was unavailable, so optional `node -c` verification could not be executed.\n"}], "grading": {"eval_name": "eval-2-express-health", "configuration": "without_skill", "expectations": [{"text": "package.json \u5b58\u5728\u4e14\u5408\u6cd5 JSON", "passed": true, "evidence": "keys=['name', 'version', 'description', 'main', 'scripts', 'dependencies']"}, {"text": "package.json \u542b express ^4.x", "passed": true, "evidence": "express=^4.19.2"}, {"text": "package.json \u542b jest \u4f9d\u8d56", "passed": true, "evidence": "jest=^29.7.0"}, {"text": "\u5165\u53e3\u542b /health \u8def\u7531", "passed": true, "evidence": "js_files=['src\\\\app.js', 'src\\\\server.js', 'tests\\\\health.test.js']"}, {"text": "\u6d4b\u8bd5\u6587\u4ef6\u5b58\u5728", "passed": true, "evidence": "test_files=['tests\\\\health.test.js']"}, {"text": "\u6d4b\u8bd5\u8986\u76d6\u4e09\u4e2a\u5b57\u6bb5 status/uptime/timestamp", "passed": true, "evidence": "hits=['status', 'uptime', 'timestamp']"}, {"text": "README \u542b\u542f\u52a8\u547d\u4ee4\uff08npm \u6216 node\uff09", "passed": true, "evidence": "readme_len=971"}, {"text": "COMMIT_PLAN.md \u542b\u82f1\u6587 commit message", "passed": true, "evidence": "package.json\n.gitignore\nREADME.md\nsrc/app.js\nsrc/server.js\ntests/health.test.js\nfeat: add minimal Express service with GET /health and jest tests"}], "passed": 8, "total": 8, "pass_rate": 1.0}}, {"id": "eval-3-print-to-logging-with_skill", "prompt": "\u6211\u5f53\u524d\u76ee\u5f55\u6709\u4e2a\u7b80\u5355\u7684 hello.py\uff1a\u91cc\u9762\u53ea\u6709\u4e00\u884c print('hello world')\u3002\u5e2e\u6211\u628a print \u6362\u6210 Python \u6807\u51c6 logging\uff08INFO \u7ea7\u522b\uff0clogger \u540d\u7528\u6587\u4ef6\u540d\uff09\u3002\u5c31\u8fd9\u4e00\u5904\u6539\u52a8\u3002", "eval_id": 3, "outputs": [{"name": "COMMIT_PLAN.md", "type": "text", "content": "# Commit Plan\n\n## Files to commit\n- `hello.py` (modified)\n\n## Commit message (English, per CLAUDE.md rule)\n\n```\nrefactor(hello): replace print with stdlib logging at INFO level\n\nUse logging.getLogger with the file stem as the logger name and\nconfigure basicConfig at INFO so the message is visible.\n```\n\n## Notes\n- Stay on current branch (no new branch), per CLAUDE.md.\n- No `git add` / `git commit` executed in this simulation per the rules.\n"}, {"name": "hello.py", "type": "text", "content": "import logging\nfrom pathlib import Path\n\n# \u7528\u6587\u4ef6\u540d\uff08\u4e0d\u542b\u6269\u5c55\u540d\uff09\u4f5c\u4e3a logger \u540d\uff0c\u6ee1\u8db3\"logger \u540d\u7528\u6587\u4ef6\u540d\"\u7684\u8981\u6c42\nlogger = logging.getLogger(Path(__file__).stem)\n# \u914d\u7f6e INFO \u7ea7\u522b\u8f93\u51fa\uff0c\u786e\u4fdd INFO \u65e5\u5fd7\u53ef\u89c1\nlogging.basicConfig(level=logging.INFO)\n\nlogger.info('hello world')\n"}, {"name": "TRANSCRIPT.md", "type": "text", "content": "# TRANSCRIPT\n\n## \u51b3\u7b56\uff1a\u5e94\u7528\"\u4e3b\u52a8\u9000\u51fa\u672c\u6d41\u7a0b\"\u89c4\u5219\uff08\u9009\u9879 a\uff09\n\n\u4f9d\u636e `vibe-coding-workflow/SKILL.md` \u4e2d\"\u8fb9\u754c\u4e0e\u4f8b\u5916\"\u5c0f\u8282\uff1a\n> **\u4f55\u65f6\u4e3b\u52a8\u9000\u51fa\u672c\u6d41\u7a0b**\uff1a\u5f53\u4f60\u53d1\u73b0\u9700\u6c42\u5b9e\u9645\u4e0a\u6781\u7b80\uff0810 \u884c\u4ee3\u7801\u4ee5\u5185\uff09\uff0c\u660e\u786e\u544a\u8bc9\u7528\u6237\"\u8fd9\u4e2a\u4e0d\u7528\u8d70\u5b8c\u6574\u6d41\u7a0b\uff0c\u76f4\u63a5\u6539\u4e86\"\uff0c\u5e76\u9000\u51fa\n\n\u4ee5\u53ca\"\u4e0d\u89e6\u53d1\"\u5217\u8868\u4e2d\uff1a\n> - \u5355\u884c/\u5355\u6bb5\u4fee\u6539\uff08\u76f4\u63a5\u6539\u5373\u53ef\uff09\n\n## \u5224\u65ad\u7406\u7531\n\n1. **\u6539\u52a8\u8303\u56f4**\uff1a\u5355\u6587\u4ef6\u3001\u5355\u4e00\u76ee\u7684\u7684\u66ff\u6362\uff08print \u2192 logging\uff09\n2. **\u4ee3\u7801\u4f53\u91cf**\uff1a\u6700\u7ec8\u6587\u4ef6 < 10 \u884c\uff0c\u8fdc\u4f4e\u4e8e\u89e6\u53d1\u9608\u503c\n3. **\u65e0\u8de8\u6587\u4ef6\u5f71\u54cd**\uff1a\u4e0d\u6d89\u53ca\u591a\u6a21\u5757\u3001\u65e0 schema \u53d8\u66f4\u3001\u65e0\u65b0\u4f9d\u8d56\uff08logging \u662f stdlib\uff09\n4. **\u9700\u6c42\u8fb9\u754c\u5df2\u95ed\u5408**\uff1a\u7528\u6237\u660e\u786e\u8bf4\"\u5c31\u8fd9\u4e00\u5904\u6539\u52a8\"\uff0c\u5e76\u5df2\u6307\u5b9a INFO \u7ea7\u522b + logger \u540d\u89c4\u5219\n5. **\u65e0\u9700 Plan \u65b9\u6848\u5bf9\u6bd4**\uff1a\u6807\u51c6\u7684 stdlib logging \u7528\u6cd5\uff0c\u53ea\u6709\u4e00\u79cd\u5408\u7406\u5b9e\u73b0\n\n\u56e0\u6b64**\u672a\u6267\u884c 6 \u9636\u6bb5\u5b8c\u6574\u6d41\u7a0b**\uff0c\u76f4\u63a5\u505a\u4e86\uff1a\n- \u8bfb\u53d6 hello.py\n- \u66ff\u6362\u4e3a logging \u5b9e\u73b0\uff08\u542b\u6ce8\u91ca\uff0c\u9075\u5b88 CLAUDE.md \"\u4ee3\u7801\u5fc5\u987b\u52a0\u6ce8\u91ca\"\uff09\n- \u5199\u672c TRANSCRIPT.md \u4e0e COMMIT_PLAN.md\uff08\u4ec5\u56e0\u8bc4\u6d4b\u8981\u6c42\uff0c\u5e38\u89c4\u573a\u666f\u65e0\u9700\uff09\n\n## \u6539\u52a8\u6458\u8981\n\n`hello.py`\uff1a\n- `print('hello world')` \u2192 \u7528 `logging.getLogger(Path(__file__).stem)` \u521b\u5efa logger\n- `basicConfig(level=logging.INFO)` \u786e\u4fdd INFO \u53ef\u89c1\n- `logger.info('hello world')` \u8f93\u51fa\n\n## \u7528\u6237\u544a\u77e5\u8bdd\u672f\uff08\u6a21\u62df\uff09\n\n> \u8fd9\u4e2a\u4e0d\u7528\u8d70\u5b8c\u6574 Plan/Review \u6d41\u7a0b\uff0c\u76f4\u63a5\u6539\u4e86\uff1a\u628a print \u6362\u6210 logging\uff0clogger \u540d\u901a\u8fc7 `Path(__file__).stem` \u53d6\u6587\u4ef6\u540d\uff0cbasicConfig \u8bbe\u4e3a INFO\u3002\n"}], "grading": {"eval_name": "eval-3-print-to-logging", "configuration": "with_skill", "expectations": [{"text": "hello.py \u542b import logging", "passed": true, "evidence": "import logging\nfrom pathlib import Path\n\n# \u7528\u6587\u4ef6\u540d\uff08\u4e0d\u542b\u6269\u5c55\u540d\uff09\u4f5c\u4e3a logger \u540d\uff0c\u6ee1\u8db3\"logger \u540d\u7528\u6587\u4ef6\u540d\"\u7684\u8981\u6c42\nlogger = logging.getLogger(Path(__file__).stem)\n# \u914d\u7f6e INFO \u7ea7\u522b\u8f93\u51fa\uff0c\u786e\u4fdd INFO \u65e5\u5fd7\u53ef"}, {"text": "hello.py \u4e0d\u518d\u542b print( \u8c03\u7528", "passed": true, "evidence": "ok"}, {"text": "hello.py \u8c03\u7528 logger \u7684 .info(", "passed": true, "evidence": "ok"}, {"text": "TRANSCRIPT.md \u5b58\u5728", "passed": true, "evidence": "len=873"}, {"text": "TRANSCRIPT.md \u660e\u786e\u8bf4\u660e\u8bc6\u522b\u4e3a\u7b80\u5355\u4efb\u52a1\u5e76\u9000\u51fa\u5b8c\u6574\u6d41\u7a0b\uff08with_skill \u5e94\u6709\u7684\u5224\u65ad\uff09", "passed": true, "evidence": "# TRANSCRIPT\n\n## \u51b3\u7b56\uff1a\u5e94\u7528\"\u4e3b\u52a8\u9000\u51fa\u672c\u6d41\u7a0b\"\u89c4\u5219\uff08\u9009\u9879 a\uff09\n\n\u4f9d\u636e `vibe-coding-workflow/SKILL.md` \u4e2d\"\u8fb9\u754c\u4e0e\u4f8b\u5916\"\u5c0f\u8282\uff1a\n> **\u4f55\u65f6\u4e3b\u52a8\u9000\u51fa\u672c\u6d41\u7a0b**\uff1a\u5f53\u4f60\u53d1\u73b0\u9700\u6c42\u5b9e\u9645\u4e0a\u6781\u7b80\uff0810 \u884c\u4ee3\u7801\u4ee5\u5185\uff09\uff0c\u660e\u786e\u544a\u8bc9\u7528\u6237\"\u8fd9\u4e2a\u4e0d\u7528\u8d70\u5b8c\u6574\u6d41\u7a0b\uff0c\u76f4\u63a5\u6539\u4e86\"\uff0c\u5e76\u9000\u51fa\n\n\u4ee5\u53ca\"\u4e0d\u89e6\u53d1\"\u5217\u8868\u4e2d\uff1a\n> - \u5355\u884c/\u5355\u6bb5\u4fee\u6539\uff08\u76f4\u63a5\u6539\u5373\u53ef\uff09\n\n## \u5224\u65ad\u7406\u7531\n\n1. **\u6539\u52a8\u8303\u56f4**\uff1a\u5355\u6587\u4ef6\u3001\u5355\u4e00\u76ee\u7684\u7684\u66ff\u6362\uff08print \u2192 logging\uff09\n2. **\u4ee3\u7801\u4f53\u91cf**\uff1a\u6700\u7ec8\u6587\u4ef6 < 10 \u884c\uff0c\u8fdc\u4f4e\u4e8e\u89e6\u53d1\u9608\u503c\n3. **\u65e0\u8de8\u6587\u4ef6\u5f71\u54cd**\uff1a\u4e0d\u6d89\u53ca\u591a\u6a21\u5757\u3001\u65e0 schema \u53d8\u66f4"}, {"text": "\u6ca1\u6709\u8fc7\u5ea6\u4ea7\u51fa\uff08\u65e0\u72ec\u7acb\u6d4b\u8bd5\u3001\u65e0 Plan \u6587\u6863\uff09", "passed": true, "evidence": "extras=[]"}], "passed": 6, "total": 6, "pass_rate": 1.0}}, {"id": "eval-3-print-to-logging-without_skill", "prompt": "\u6211\u5f53\u524d\u76ee\u5f55\u6709\u4e2a\u7b80\u5355\u7684 hello.py\uff1a\u91cc\u9762\u53ea\u6709\u4e00\u884c print('hello world')\u3002\u5e2e\u6211\u628a print \u6362\u6210 Python \u6807\u51c6 logging\uff08INFO \u7ea7\u522b\uff0clogger \u540d\u7528\u6587\u4ef6\u540d\uff09\u3002\u5c31\u8fd9\u4e00\u5904\u6539\u52a8\u3002", "eval_id": 3, "outputs": [{"name": "hello.py", "type": "text", "content": "import logging\nfrom pathlib import Path\n\n# \u4f7f\u7528\u6587\u4ef6\u540d\uff08\u4e0d\u542b\u6269\u5c55\u540d\uff09\u4f5c\u4e3a logger \u540d\u79f0\nlogger = logging.getLogger(Path(__file__).stem)\n\n# \u914d\u7f6e\u65e5\u5fd7\u8f93\u51fa\u7ea7\u522b\u4e3a INFO\nlogging.basicConfig(level=logging.INFO)\n\n# \u4f7f\u7528 logger \u8f93\u51fa INFO \u7ea7\u522b\u65e5\u5fd7\uff0c\u66ff\u4ee3\u539f\u6765\u7684 print\nlogger.info('hello world')\n"}, {"name": "TRANSCRIPT.md", "type": "text", "content": "# TRANSCRIPT\n\n## \u7528\u6237\u9700\u6c42\n\u5c06 `hello.py` \u4e2d\u7684 `print('hello world')` \u66ff\u6362\u4e3a Python \u6807\u51c6 `logging`\uff0c\u4f7f\u7528 INFO \u7ea7\u522b\uff0clogger \u540d\u4e3a\u6587\u4ef6\u540d\u3002\n\n## \u6267\u884c\u6b65\u9aa4\n1. \u8bfb\u53d6 `hello.py`\uff0c\u786e\u8ba4\u4ec5\u6709\u4e00\u884c `print('hello world')`\u3002\n2. \u7f16\u8f91 `hello.py`\uff1a\n   - \u5f15\u5165 `logging` \u548c `pathlib.Path`\u3002\n   - \u4f7f\u7528 `Path(__file__).stem` \u4f5c\u4e3a logger \u540d\u79f0\uff08\u5373 `hello`\uff09\u3002\n   - \u901a\u8fc7 `logging.basicConfig(level=logging.INFO)` \u914d\u7f6e\u65e5\u5fd7\u7ea7\u522b\u3002\n   - \u8c03\u7528 `logger.info('hello world')` \u66ff\u4ee3\u539f `print`\u3002\n3. \u5c1d\u8bd5\u8fd0\u884c\u9a8c\u8bc1\uff08\u88ab\u6c99\u7bb1\u6743\u9650\u62d2\u7edd\uff0c\u672a\u6267\u884c\uff09\u3002\n\n## \u6539\u52a8\u8303\u56f4\n- \u4ec5\u4fee\u6539 `hello.py` \u4e00\u4e2a\u6587\u4ef6\uff0c\u7b26\u5408\u7528\u6237\"\u5c31\u8fd9\u4e00\u5904\u6539\u52a8\"\u7684\u8981\u6c42\u3002\n"}], "grading": {"eval_name": "eval-3-print-to-logging", "configuration": "without_skill", "expectations": [{"text": "hello.py \u542b import logging", "passed": true, "evidence": "import logging\nfrom pathlib import Path\n\n# \u4f7f\u7528\u6587\u4ef6\u540d\uff08\u4e0d\u542b\u6269\u5c55\u540d\uff09\u4f5c\u4e3a logger \u540d\u79f0\nlogger = logging.getLogger(Path(__file__).stem)\n\n# \u914d\u7f6e\u65e5\u5fd7\u8f93\u51fa\u7ea7\u522b\u4e3a INFO\nlogging.basicConfig(level="}, {"text": "hello.py \u4e0d\u518d\u542b print( \u8c03\u7528", "passed": true, "evidence": "ok"}, {"text": "hello.py \u8c03\u7528 logger \u7684 .info(", "passed": true, "evidence": "ok"}, {"text": "TRANSCRIPT.md \u5b58\u5728", "passed": true, "evidence": "len=456"}], "passed": 4, "total": 4, "pass_rate": 1.0}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "vibe-coding-workflow", "skill_path": "C:\\Users\\developer\\.claude\\skills\\vibe-coding-workflow", "executor_model": "claude-opus-4-7[1m]", "analyzer_model": "claude-opus-4-7[1m]", "timestamp": "2026-05-19T07:02:21Z", "evals_run": [1, 2, 3], "runs_per_configuration": 1}, "runs": [{"eval_id": 1, "eval_name": "eval-1-csv-dedupe-cli", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 195.6, "tokens": 52777, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "dedupe.py \u6587\u4ef6\u5b58\u5728\u4e14\u975e\u7a7a", "passed": true, "evidence": "size=4317"}, {"text": "\u6d4b\u8bd5\u6587\u4ef6\u5b58\u5728\uff08test_*.py \u6216 *_test.py\uff09", "passed": true, "evidence": "matches=['test_dedupe.py']"}, {"text": "README.md \u5b58\u5728", "passed": true, "evidence": "files=['README.md']"}, {"text": "TRANSCRIPT.md \u63d0\u5230 Plan/\u65b9\u6848/\u9636\u6bb5\uff08\u8bf4\u660e\u8d70\u4e86\u6d41\u7a0b\uff09", "passed": true, "evidence": "# Vibe Coding Workflow \u2014 Transcript\n\n\u6309 `vibe-coding-workflow` skill \u7684 6 \u9636\u6bb5\u95ed\u73af\u5f00\u53d1 `dedupe.py` \u7684\u8fc7\u7a0b\u8bb0\u5f55\u3002\n\n---\n\n## \u7b2c 1 \u9636\u6bb5\uff1a\u9700\u6c42\u7406\u89e3\n\n"}, {"text": "COMMIT_PLAN.md \u5b58\u5728", "passed": true, "evidence": "size=1361"}, {"text": "Commit message \u662f\u82f1\u6587\uff08\u4e0d\u542b\u4e2d\u6587\uff09", "passed": true, "evidence": "dedupe.py\ntest_dedupe.py\nREADME.md\nfeat(dedupe): add CSV column-based deduplication CLI"}, {"text": "\u6d4b\u8bd5\u8986\u76d6\u81f3\u5c11 2 \u4e2a\u8fb9\u754c\u573a\u666f\u5173\u952e\u8bcd", "passed": true, "evidence": "edge_keyword_hits=5"}], "notes": []}, {"eval_id": 1, "eval_name": "eval-1-csv-dedupe-cli", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.8571428571428571, "passed": 6, "failed": 1, "total": 7, "time_seconds": 88.3, "tokens": 32342, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "dedupe.py \u6587\u4ef6\u5b58\u5728\u4e14\u975e\u7a7a", "passed": true, "evidence": "size=5702"}, {"text": "\u6d4b\u8bd5\u6587\u4ef6\u5b58\u5728\uff08test_*.py \u6216 *_test.py\uff09", "passed": true, "evidence": "matches=['test_dedupe.py']"}, {"text": "README.md \u5b58\u5728", "passed": true, "evidence": "files=['README.md']"}, {"text": "TRANSCRIPT.md \u63d0\u5230 Plan/\u65b9\u6848/\u9636\u6bb5\uff08\u8bf4\u660e\u8d70\u4e86\u6d41\u7a0b\uff09", "passed": false, "evidence": "# Transcript\n\nSteps taken to implement the CSV dedupe CLI from scratch:\n\n1. **Confirmed the working directory** was the "}, {"text": "COMMIT_PLAN.md \u5b58\u5728", "passed": true, "evidence": "size=891"}, {"text": "Commit message \u662f\u82f1\u6587\uff08\u4e0d\u542b\u4e2d\u6587\uff09", "passed": true, "evidence": "dedupe.py\ntest_dedupe.py\nREADME.md"}, {"text": "\u6d4b\u8bd5\u8986\u76d6\u81f3\u5c11 2 \u4e2a\u8fb9\u754c\u573a\u666f\u5173\u952e\u8bcd", "passed": true, "evidence": "edge_keyword_hits=3"}], "notes": []}, {"eval_id": 2, "eval_name": "eval-2-express-health", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 130.4, "tokens": 47491, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "package.json \u5b58\u5728\u4e14\u5408\u6cd5 JSON", "passed": true, "evidence": "keys=['name', 'version', 'description', 'main', 'scripts', 'keywords']"}, {"text": "package.json \u542b express ^4.x", "passed": true, "evidence": "express=^4.19.2"}, {"text": "package.json \u542b jest \u4f9d\u8d56", "passed": true, "evidence": "jest=^29.7.0"}, {"text": "\u5165\u53e3\u542b /health \u8def\u7531", "passed": true, "evidence": "js_files=['app.js', 'server.js', '__tests__\\\\health.test.js']"}, {"text": "\u6d4b\u8bd5\u6587\u4ef6\u5b58\u5728", "passed": true, "evidence": "test_files=['__tests__\\\\health.test.js']"}, {"text": "\u6d4b\u8bd5\u8986\u76d6\u4e09\u4e2a\u5b57\u6bb5 status/uptime/timestamp", "passed": true, "evidence": "hits=['status', 'uptime', 'timestamp']"}, {"text": "README \u542b\u542f\u52a8\u547d\u4ee4\uff08npm \u6216 node\uff09", "passed": true, "evidence": "readme_len=1378"}, {"text": "COMMIT_PLAN.md \u542b\u82f1\u6587 commit message", "passed": true, "evidence": "package.json\napp.js\nserver.js\n__tests__/health.test.js\nREADME.md\nfeat(health): add minimal Express service with GET /health endpoint"}], "notes": []}, {"eval_id": 2, "eval_name": "eval-2-express-health", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 72.2, "tokens": 31301, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "package.json \u5b58\u5728\u4e14\u5408\u6cd5 JSON", "passed": true, "evidence": "keys=['name', 'version', 'description', 'main', 'scripts', 'dependencies']"}, {"text": "package.json \u542b express ^4.x", "passed": true, "evidence": "express=^4.19.2"}, {"text": "package.json \u542b jest \u4f9d\u8d56", "passed": true, "evidence": "jest=^29.7.0"}, {"text": "\u5165\u53e3\u542b /health \u8def\u7531", "passed": true, "evidence": "js_files=['src\\\\app.js', 'src\\\\server.js', 'tests\\\\health.test.js']"}, {"text": "\u6d4b\u8bd5\u6587\u4ef6\u5b58\u5728", "passed": true, "evidence": "test_files=['tests\\\\health.test.js']"}, {"text": "\u6d4b\u8bd5\u8986\u76d6\u4e09\u4e2a\u5b57\u6bb5 status/uptime/timestamp", "passed": true, "evidence": "hits=['status', 'uptime', 'timestamp']"}, {"text": "README \u542b\u542f\u52a8\u547d\u4ee4\uff08npm \u6216 node\uff09", "passed": true, "evidence": "readme_len=971"}, {"text": "COMMIT_PLAN.md \u542b\u82f1\u6587 commit message", "passed": true, "evidence": "package.json\n.gitignore\nREADME.md\nsrc/app.js\nsrc/server.js\ntests/health.test.js\nfeat: add minimal Express service with GET /health and jest tests"}], "notes": []}, {"eval_id": 3, "eval_name": "eval-3-print-to-logging", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 52.4, "tokens": 33304, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "hello.py \u542b import logging", "passed": true, "evidence": "import logging\nfrom pathlib import Path\n\n# \u7528\u6587\u4ef6\u540d\uff08\u4e0d\u542b\u6269\u5c55\u540d\uff09\u4f5c\u4e3a logger \u540d\uff0c\u6ee1\u8db3\"logger \u540d\u7528\u6587\u4ef6\u540d\"\u7684\u8981\u6c42\nlogger = logging.getLogger(Path(__file__).stem)\n# \u914d\u7f6e INFO \u7ea7\u522b\u8f93\u51fa\uff0c\u786e\u4fdd INFO \u65e5\u5fd7\u53ef"}, {"text": "hello.py \u4e0d\u518d\u542b print( \u8c03\u7528", "passed": true, "evidence": "ok"}, {"text": "hello.py \u8c03\u7528 logger \u7684 .info(", "passed": true, "evidence": "ok"}, {"text": "TRANSCRIPT.md \u5b58\u5728", "passed": true, "evidence": "len=873"}, {"text": "TRANSCRIPT.md \u660e\u786e\u8bf4\u660e\u8bc6\u522b\u4e3a\u7b80\u5355\u4efb\u52a1\u5e76\u9000\u51fa\u5b8c\u6574\u6d41\u7a0b\uff08with_skill \u5e94\u6709\u7684\u5224\u65ad\uff09", "passed": true, "evidence": "# TRANSCRIPT\n\n## \u51b3\u7b56\uff1a\u5e94\u7528\"\u4e3b\u52a8\u9000\u51fa\u672c\u6d41\u7a0b\"\u89c4\u5219\uff08\u9009\u9879 a\uff09\n\n\u4f9d\u636e `vibe-coding-workflow/SKILL.md` \u4e2d\"\u8fb9\u754c\u4e0e\u4f8b\u5916\"\u5c0f\u8282\uff1a\n> **\u4f55\u65f6\u4e3b\u52a8\u9000\u51fa\u672c\u6d41\u7a0b**\uff1a\u5f53\u4f60\u53d1\u73b0\u9700\u6c42\u5b9e\u9645\u4e0a\u6781\u7b80\uff0810 \u884c\u4ee3\u7801\u4ee5\u5185\uff09\uff0c\u660e\u786e\u544a\u8bc9\u7528\u6237\"\u8fd9\u4e2a\u4e0d\u7528\u8d70\u5b8c\u6574\u6d41\u7a0b\uff0c\u76f4\u63a5\u6539\u4e86\"\uff0c\u5e76\u9000\u51fa\n\n\u4ee5\u53ca\"\u4e0d\u89e6\u53d1\"\u5217\u8868\u4e2d\uff1a\n> - \u5355\u884c/\u5355\u6bb5\u4fee\u6539\uff08\u76f4\u63a5\u6539\u5373\u53ef\uff09\n\n## \u5224\u65ad\u7406\u7531\n\n1. **\u6539\u52a8\u8303\u56f4**\uff1a\u5355\u6587\u4ef6\u3001\u5355\u4e00\u76ee\u7684\u7684\u66ff\u6362\uff08print \u2192 logging\uff09\n2. **\u4ee3\u7801\u4f53\u91cf**\uff1a\u6700\u7ec8\u6587\u4ef6 < 10 \u884c\uff0c\u8fdc\u4f4e\u4e8e\u89e6\u53d1\u9608\u503c\n3. **\u65e0\u8de8\u6587\u4ef6\u5f71\u54cd**\uff1a\u4e0d\u6d89\u53ca\u591a\u6a21\u5757\u3001\u65e0 schema \u53d8\u66f4"}, {"text": "\u6ca1\u6709\u8fc7\u5ea6\u4ea7\u51fa\uff08\u65e0\u72ec\u7acb\u6d4b\u8bd5\u3001\u65e0 Plan \u6587\u6863\uff09", "passed": true, "evidence": "extras=[]"}], "notes": []}, {"eval_id": 3, "eval_name": "eval-3-print-to-logging", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 37.6, "tokens": 27202, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "hello.py \u542b import logging", "passed": true, "evidence": "import logging\nfrom pathlib import Path\n\n# \u4f7f\u7528\u6587\u4ef6\u540d\uff08\u4e0d\u542b\u6269\u5c55\u540d\uff09\u4f5c\u4e3a logger \u540d\u79f0\nlogger = logging.getLogger(Path(__file__).stem)\n\n# \u914d\u7f6e\u65e5\u5fd7\u8f93\u51fa\u7ea7\u522b\u4e3a INFO\nlogging.basicConfig(level="}, {"text": "hello.py \u4e0d\u518d\u542b print( \u8c03\u7528", "passed": true, "evidence": "ok"}, {"text": "hello.py \u8c03\u7528 logger \u7684 .info(", "passed": true, "evidence": "ok"}, {"text": "TRANSCRIPT.md \u5b58\u5728", "passed": true, "evidence": "len=456"}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 126.133, "stddev": 58.539, "min": 52.4, "max": 195.6}, "tokens": {"mean": 44524, "stddev": 8221.993, "min": 33304, "max": 52777}}, "without_skill": {"pass_rate": {"mean": 0.952, "stddev": 0.067, "min": 0.857, "max": 1.0}, "time_seconds": {"mean": 66.033, "stddev": 21.153, "min": 37.6, "max": 88.3}, "tokens": {"mean": 30281.667, "stddev": 2218.735, "min": 27202, "max": 32342}}, "delta": {"pass_rate": "+0.048", "time_seconds": "+60.1", "tokens": "+14242"}}, "notes": ["with_skill pass_rate 1.00 vs baseline 0.95\uff08delta +0.048\uff09\u2014 skill \u8ba9\u5168\u90e8\u65ad\u8a00\u901a\u8fc7\uff0cbaseline \u5728 eval-1 \u6f0f\u6389\u4e86 'TRANSCRIPT \u63d0\u5230 Plan/\u9636\u6bb5' \u4e00\u9879\uff0c\u8bf4\u660e skill \u786e\u5b9e\u9a71\u52a8\u6a21\u578b\u628a\u6d41\u7a0b\u663e\u6027\u5316\u3002", "with_skill \u5e73\u5747\u8017\u65f6 126s vs baseline 66s\uff08+60s\uff0c\u7ea6 +91%\uff09\u2014\u2014 \u8d70\u5b8c\u6574 6 \u9636\u6bb5\u5fc5\u7136\u66f4\u6162\uff0c\u662f\u9884\u671f\u6210\u672c\u3002", "with_skill \u5e73\u5747 tokens 44524 vs baseline 30282\uff08+14242\uff09\u2014\u2014 \u989d\u5916\u5f00\u9500\u4e3b\u8981\u6765\u81ea\u8bfb SKILL.md + references\uff0c\u4ee5\u53ca\u8f93\u51fa TRANSCRIPT/Plan/Review \u7b49\u7ed3\u6784\u5316\u4ea4\u4ed8\u7269\u3002", "eval-3\uff08\u6781\u7b80\u4efb\u52a1\uff09with_skill \u5373\u4fbf\u6b63\u786e\u8bc6\u522b\u4e3a\u7b80\u5355\u4efb\u52a1\u5e76\u9000\u51fa\uff0c\u4ecd\u591a\u82b1 ~40% \u65f6\u95f4\u548c token \u2014\u2014 \u8fd9\u662f skill \u8bbe\u8ba1\u7684\u56fa\u5b9a\u5f00\u9500\u3002\u5982\u679c\u7528\u6237\u7684\u5de5\u4f5c\u6d41\u91cc\u5c0f\u4efb\u52a1\u5360\u6bd4\u9ad8\uff0c\u5e94\u4f18\u5316\u89e6\u53d1\u6761\u4ef6\uff0c\u8ba9\u5c0f\u4efb\u52a1\u76f4\u63a5\u8d70\u9ed8\u8ba4\u884c\u4e3a\u3002", "\u65ad\u8a00\u4e3b\u8981\u68c0\u67e5\u4ea7\u7269\u5b58\u5728\u6027\u548c\u7ed3\u6784\u6b63\u786e\u6027\uff08\u7a0b\u5e8f\u5316\u53ef\u9a8c\u8bc1\uff09\uff0c\u672a\u8986\u76d6\u4ee3\u7801\u98ce\u683c / \u6d4b\u8bd5\u8d28\u91cf\u7b49\u4e3b\u89c2\u7ef4\u5ea6\u2014\u2014\u5efa\u8bae\u4eba\u5de5 review \u65f6\u8865\u8fd9\u4e00\u5c42\u3002"]}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

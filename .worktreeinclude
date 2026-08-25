@@ -1,0 +1,7 @@
+# 定义 git worktree 中需要复制的本地文件
+# 仅复制同时匹配此处模式 且 被 .gitignore 忽略的文件
+# 常见用途：复制 .env、本地配置到新的 worktree 工作目录
+
+# .env
+# .env.local
+# local-config.json

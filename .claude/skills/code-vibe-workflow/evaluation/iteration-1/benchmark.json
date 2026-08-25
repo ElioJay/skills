@@ -1,0 +1,385 @@
+{
+  "metadata": {
+    "skill_name": "vibe-coding-workflow",
+    "skill_path": "C:\\Users\\developer\\.claude\\skills\\vibe-coding-workflow",
+    "executor_model": "claude-opus-4-7[1m]",
+    "analyzer_model": "claude-opus-4-7[1m]",
+    "timestamp": "2026-05-19T07:02:21Z",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "eval-1-csv-dedupe-cli",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 195.6,
+        "tokens": 52777,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "dedupe.py 文件存在且非空",
+          "passed": true,
+          "evidence": "size=4317"
+        },
+        {
+          "text": "测试文件存在（test_*.py 或 *_test.py）",
+          "passed": true,
+          "evidence": "matches=['test_dedupe.py']"
+        },
+        {
+          "text": "README.md 存在",
+          "passed": true,
+          "evidence": "files=['README.md']"
+        },
+        {
+          "text": "TRANSCRIPT.md 提到 Plan/方案/阶段（说明走了流程）",
+          "passed": true,
+          "evidence": "# Vibe Coding Workflow — Transcript\n\n按 `vibe-coding-workflow` skill 的 6 阶段闭环开发 `dedupe.py` 的过程记录。\n\n---\n\n## 第 1 阶段：需求理解\n\n"
+        },
+        {
+          "text": "COMMIT_PLAN.md 存在",
+          "passed": true,
+          "evidence": "size=1361"
+        },
+        {
+          "text": "Commit message 是英文（不含中文）",
+          "passed": true,
+          "evidence": "dedupe.py\ntest_dedupe.py\nREADME.md\nfeat(dedupe): add CSV column-based deduplication CLI"
+        },
+        {
+          "text": "测试覆盖至少 2 个边界场景关键词",
+          "passed": true,
+          "evidence": "edge_keyword_hits=5"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "eval-1-csv-dedupe-cli",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8571428571428571,
+        "passed": 6,
+        "failed": 1,
+        "total": 7,
+        "time_seconds": 88.3,
+        "tokens": 32342,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "dedupe.py 文件存在且非空",
+          "passed": true,
+          "evidence": "size=5702"
+        },
+        {
+          "text": "测试文件存在（test_*.py 或 *_test.py）",
+          "passed": true,
+          "evidence": "matches=['test_dedupe.py']"
+        },
+        {
+          "text": "README.md 存在",
+          "passed": true,
+          "evidence": "files=['README.md']"
+        },
+        {
+          "text": "TRANSCRIPT.md 提到 Plan/方案/阶段（说明走了流程）",
+          "passed": false,
+          "evidence": "# Transcript\n\nSteps taken to implement the CSV dedupe CLI from scratch:\n\n1. **Confirmed the working directory** was the "
+        },
+        {
+          "text": "COMMIT_PLAN.md 存在",
+          "passed": true,
+          "evidence": "size=891"
+        },
+        {
+          "text": "Commit message 是英文（不含中文）",
+          "passed": true,
+          "evidence": "dedupe.py\ntest_dedupe.py\nREADME.md"
+        },
+        {
+          "text": "测试覆盖至少 2 个边界场景关键词",
+          "passed": true,
+          "evidence": "edge_keyword_hits=3"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "eval-2-express-health",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 130.4,
+        "tokens": 47491,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "package.json 存在且合法 JSON",
+          "passed": true,
+          "evidence": "keys=['name', 'version', 'description', 'main', 'scripts', 'keywords']"
+        },
+        {
+          "text": "package.json 含 express ^4.x",
+          "passed": true,
+          "evidence": "express=^4.19.2"
+        },
+        {
+          "text": "package.json 含 jest 依赖",
+          "passed": true,
+          "evidence": "jest=^29.7.0"
+        },
+        {
+          "text": "入口含 /health 路由",
+          "passed": true,
+          "evidence": "js_files=['app.js', 'server.js', '__tests__\\\\health.test.js']"
+        },
+        {
+          "text": "测试文件存在",
+          "passed": true,
+          "evidence": "test_files=['__tests__\\\\health.test.js']"
+        },
+        {
+          "text": "测试覆盖三个字段 status/uptime/timestamp",
+          "passed": true,
+          "evidence": "hits=['status', 'uptime', 'timestamp']"
+        },
+        {
+          "text": "README 含启动命令（npm 或 node）",
+          "passed": true,
+          "evidence": "readme_len=1378"
+        },
+        {
+          "text": "COMMIT_PLAN.md 含英文 commit message",
+          "passed": true,
+          "evidence": "package.json\napp.js\nserver.js\n__tests__/health.test.js\nREADME.md\nfeat(health): add minimal Express service with GET /health endpoint"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "eval-2-express-health",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 72.2,
+        "tokens": 31301,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "package.json 存在且合法 JSON",
+          "passed": true,
+          "evidence": "keys=['name', 'version', 'description', 'main', 'scripts', 'dependencies']"
+        },
+        {
+          "text": "package.json 含 express ^4.x",
+          "passed": true,
+          "evidence": "express=^4.19.2"
+        },
+        {
+          "text": "package.json 含 jest 依赖",
+          "passed": true,
+          "evidence": "jest=^29.7.0"
+        },
+        {
+          "text": "入口含 /health 路由",
+          "passed": true,
+          "evidence": "js_files=['src\\\\app.js', 'src\\\\server.js', 'tests\\\\health.test.js']"
+        },
+        {
+          "text": "测试文件存在",
+          "passed": true,
+          "evidence": "test_files=['tests\\\\health.test.js']"
+        },
+        {
+          "text": "测试覆盖三个字段 status/uptime/timestamp",
+          "passed": true,
+          "evidence": "hits=['status', 'uptime', 'timestamp']"
+        },
+        {
+          "text": "README 含启动命令（npm 或 node）",
+          "passed": true,
+          "evidence": "readme_len=971"
+        },
+        {
+          "text": "COMMIT_PLAN.md 含英文 commit message",
+          "passed": true,
+          "evidence": "package.json\n.gitignore\nREADME.md\nsrc/app.js\nsrc/server.js\ntests/health.test.js\nfeat: add minimal Express service with GET /health and jest tests"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "eval-3-print-to-logging",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 52.4,
+        "tokens": 33304,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "hello.py 含 import logging",
+          "passed": true,
+          "evidence": "import logging\nfrom pathlib import Path\n\n# 用文件名（不含扩展名）作为 logger 名，满足\"logger 名用文件名\"的要求\nlogger = logging.getLogger(Path(__file__).stem)\n# 配置 INFO 级别输出，确保 INFO 日志可"
+        },
+        {
+          "text": "hello.py 不再含 print( 调用",
+          "passed": true,
+          "evidence": "ok"
+        },
+        {
+          "text": "hello.py 调用 logger 的 .info(",
+          "passed": true,
+          "evidence": "ok"
+        },
+        {
+          "text": "TRANSCRIPT.md 存在",
+          "passed": true,
+          "evidence": "len=873"
+        },
+        {
+          "text": "TRANSCRIPT.md 明确说明识别为简单任务并退出完整流程（with_skill 应有的判断）",
+          "passed": true,
+          "evidence": "# TRANSCRIPT\n\n## 决策：应用\"主动退出本流程\"规则（选项 a）\n\n依据 `vibe-coding-workflow/SKILL.md` 中\"边界与例外\"小节：\n> **何时主动退出本流程**：当你发现需求实际上极简（10 行代码以内），明确告诉用户\"这个不用走完整流程，直接改了\"，并退出\n\n以及\"不触发\"列表中：\n> - 单行/单段修改（直接改即可）\n\n## 判断理由\n\n1. **改动范围**：单文件、单一目的的替换（print → logging）\n2. **代码体量**：最终文件 < 10 行，远低于触发阈值\n3. **无跨文件影响**：不涉及多模块、无 schema 变更"
+        },
+        {
+          "text": "没有过度产出（无独立测试、无 Plan 文档）",
+          "passed": true,
+          "evidence": "extras=[]"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "eval-3-print-to-logging",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 37.6,
+        "tokens": 27202,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "hello.py 含 import logging",
+          "passed": true,
+          "evidence": "import logging\nfrom pathlib import Path\n\n# 使用文件名（不含扩展名）作为 logger 名称\nlogger = logging.getLogger(Path(__file__).stem)\n\n# 配置日志输出级别为 INFO\nlogging.basicConfig(level="
+        },
+        {
+          "text": "hello.py 不再含 print( 调用",
+          "passed": true,
+          "evidence": "ok"
+        },
+        {
+          "text": "hello.py 调用 logger 的 .info(",
+          "passed": true,
+          "evidence": "ok"
+        },
+        {
+          "text": "TRANSCRIPT.md 存在",
+          "passed": true,
+          "evidence": "len=456"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 126.133,
+        "stddev": 58.539,
+        "min": 52.4,
+        "max": 195.6
+      },
+      "tokens": {
+        "mean": 44524,
+        "stddev": 8221.993,
+        "min": 33304,
+        "max": 52777
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.952,
+        "stddev": 0.067,
+        "min": 0.857,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 66.033,
+        "stddev": 21.153,
+        "min": 37.6,
+        "max": 88.3
+      },
+      "tokens": {
+        "mean": 30281.667,
+        "stddev": 2218.735,
+        "min": 27202,
+        "max": 32342
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.048",
+      "time_seconds": "+60.1",
+      "tokens": "+14242"
+    }
+  },
+  "notes": [
+    "with_skill pass_rate 1.00 vs baseline 0.95（delta +0.048）— skill 让全部断言通过，baseline 在 eval-1 漏掉了 'TRANSCRIPT 提到 Plan/阶段' 一项，说明 skill 确实驱动模型把流程显性化。",
+    "with_skill 平均耗时 126s vs baseline 66s（+60s，约 +91%）—— 走完整 6 阶段必然更慢，是预期成本。",
+    "with_skill 平均 tokens 44524 vs baseline 30282（+14242）—— 额外开销主要来自读 SKILL.md + references，以及输出 TRANSCRIPT/Plan/Review 等结构化交付物。",
+    "eval-3（极简任务）with_skill 即便正确识别为简单任务并退出，仍多花 ~40% 时间和 token —— 这是 skill 设计的固定开销。如果用户的工作流里小任务占比高，应优化触发条件，让小任务直接走默认行为。",
+    "断言主要检查产物存在性和结构正确性（程序化可验证），未覆盖代码风格 / 测试质量等主观维度——建议人工 review 时补这一层。"
+  ]
+}

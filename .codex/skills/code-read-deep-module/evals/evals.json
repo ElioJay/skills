@@ -1,0 +1,40 @@
+{
+  "skill_name": "code-read-deep-module",
+  "evals": [
+    {
+      "id": 0,
+      "name": "java-order-module",
+      "prompt": "读一下 evals/fixtures/order-module 这个模块的整体结构和依赖，给我一份模块级阅读报告，含分层图、内部依赖图和上下文图。",
+      "expected_output": "一份中文模块阅读报告，含 10 段固定结构（定位/职责概述/结构总览/对外门面/内部分层与协作/内部依赖与依赖健康/外部依赖与消费方/关键抽象与数据模型/入口与关键路径选读/问题）与三张 Mermaid 图（① 组件分层结构图、② 内部依赖图、③ 上下文/依赖关系图）。结构总览应列全模块文件：web/OrderController、OrderService、OrderDao、dto/CreateOrderReq、entity/OrderPO，按分层呈现。内部分层应识别 Controller→Service→Dao→model 的单向分层。内部依赖图应得出『无环、分层未被破坏』的健康结论。外部依赖应标出 InventoryClient（外部 HTTP）、UserService/User（外部用户模块），并区分模块内 vs 模块外。对外门面应识别 OrderController.submit。关键数据模型应点出 CreateOrderReq/OrderPO。入口与关键路径选读应只走读 1~3 条路径（submit→createOrder→insert），并对深读附『读整个文件→code-read-deep-file；深挖方法→code-read-deep-function』委派，而非逐文件/逐方法深挖。问题段应抓出 OrderService 内的逻辑硬伤：user 可能为 null 致 NPE、空 catch 吞 insert 异常、忽略库存 lock 返回值。不应做安全/性能/架构取舍的全维度审查。",
+      "files": ["evals/fixtures/order-module"]
+    },
+    {
+      "id": 1,
+      "name": "python-payment-module",
+      "prompt": "payment-module 这个 Python 包是干嘛的，文件怎么组织、依赖健康吗？给我模块级阅读报告并出三张图。",
+      "expected_output": "中文模块阅读报告 10 段 + 三张 Mermaid 图（验证多语言：Python 包）。结构总览应列全：__init__.py、service.py、gateway.py、repository.py、models.py。内部分层应识别 service（门面/领域）→ repository（DB）+ gateway（外部适配），models 为数据模型。对外门面应识别 __init__ 导出的 PaymentService。内部依赖图应得出无环结论（service→repository→models、service→gateway）。外部依赖应点出外部支付网关（HTTP）。关键数据模型应点出 Refund（含 PENDING/SUCCESS/FAILED 状态）。问题段应抓出：空 except 吞网关异常、refund 恒返回 True、以及模块级结构硬伤——RefundDao.update_status 定义却从不被调用，导致退款单状态永远停在 PENDING（写路径形同虚设、状态不一致）。入口路径走读只挑 refund 一条，并附向下委派。不应逐文件深挖。",
+      "files": ["evals/fixtures/payment-module"]
+    },
+    {
+      "id": 2,
+      "name": "scope-guard-单文件应改道file",
+      "prompt": "读一下 OrderService.java 这个文件是干嘛的。",
+      "expected_output": "不产出模块级报告。应识别用户给的是单个文件，属于文件级阅读，明确引导改用 code-read-deep-file。若想读整个模块再让用户给模块目录/包。验证单文件改道闸门生效。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "scope-guard-单方法应改道function",
+      "prompt": "从 OrderService.createOrder 梳理调用关系，画调用图和数据流图。",
+      "expected_output": "不产出模块级报告。应识别用户给的是单个方法入口（类名.方法名），明确引导改用 code-read-deep-function。验证单方法改道闸门生效。",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "scope-guard-整项目应要求指定模块",
+      "prompt": "把整个项目的业务逻辑给我从头到尾梳理一遍。",
+      "expected_output": "不产出报告。应识别这是整项目/全代码库通读、超出本 skill 范围，明确要求用户指定要读的某一个模块（目录或包，例如 src/order），或提示此请求不适用 code-read-deep-module。验证整项目闸门生效。",
+      "files": []
+    }
+  ]
+}

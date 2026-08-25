@@ -1,0 +1,82 @@
+[
+  {
+    "query": "帮我从零搭一个简单的 todo 管理后端：FastAPI + SQLite，要 CRUD 接口 + 一个按标签筛选的接口。我希望能直接 uvicorn 跑起来。",
+    "should_trigger": true
+  },
+  {
+    "query": "我们这个 SpringBoot 项目要加个会员等级体系：bronze/silver/gold，按累计消费金额自动升级，要触发升级时发个消息到 kafka。你帮我端到端做一下，schema 我可以改。",
+    "should_trigger": true
+  },
+  {
+    "query": "周五要给老板 demo，赶紧帮我把这个 React 后台加个 Excel 导出功能，能下载当前列表页的数据就行",
+    "should_trigger": true
+  },
+  {
+    "query": "在 src/api 下加个 GET /api/users/{id}/login-stats 接口，按 days 参数返回最近 N 天的登录次数。User 实体已经有了，LoginLog 表也有，自己看着用。",
+    "should_trigger": true
+  },
+  {
+    "query": "ok 我现在要做一个内部小工具：上传一份 CSV，按指定列做分组统计，结果在网页表格里展示。用 Streamlit 或者 Flask 随便你挑，怎么简单怎么来",
+    "should_trigger": true
+  },
+  {
+    "query": "实现一下我们之前 PRD 里说的那个『订单合并发货』功能，前后端都要改。后端 Go，前端 Vue3。要带单元测试。",
+    "should_trigger": true
+  },
+  {
+    "query": "整一个能跑的 MVP 出来：用户输入一段文本，调 openai 接口做翻译，前端展示。要部署到 vercel 的那种简单结构",
+    "should_trigger": true
+  },
+  {
+    "query": "在我这个 nest.js 项目里加一个 webhook 接收端点 /webhook/stripe，要验签、要幂等、要把事件存数据库后再异步处理",
+    "should_trigger": true
+  },
+  {
+    "query": "给我这个工具脚本加一个子命令 `dedupe --by column1,column2` 支持按多列去重，要兼容现在的单列模式不破坏",
+    "should_trigger": true
+  },
+  {
+    "query": "新增一个定时任务，每天凌晨 2 点跑一次，把过去 24 小时的失败订单导出成 csv 发到运营邮箱。可以参考现有的 BalanceReportJob",
+    "should_trigger": true
+  },
+  {
+    "query": "把这个文件第 47 行的 `var` 改成 `const`",
+    "should_trigger": false
+  },
+  {
+    "query": "解释下 OrderService.calculateTax 这个方法是干嘛的，参数和返回值都讲一下",
+    "should_trigger": false
+  },
+  {
+    "query": "刚刚跑测试有个 NullPointerException：at com.example.UserMapper.findById:32，帮我看看哪里出问题了",
+    "should_trigger": false
+  },
+  {
+    "query": "把 PaymentHandler 这个类名改成 PaymentProcessor，所有引用一起改",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我看下这个 PR 改动 (#1234) 有没有问题，重点关注事务边界",
+    "should_trigger": false
+  },
+  {
+    "query": "我们项目要不要从 REST 迁到 gRPC？你怎么看，给个建议",
+    "should_trigger": false
+  },
+  {
+    "query": "加个 .gitignore，忽略 node_modules / dist / .env",
+    "should_trigger": false
+  },
+  {
+    "query": "把这个 for 循环改成 stream 写法，看起来更现代点",
+    "should_trigger": false
+  },
+  {
+    "query": "搜一下整个仓库哪里用到了 deprecatedFooBar 这个方法",
+    "should_trigger": false
+  },
+  {
+    "query": "看下这段代码为啥跑出来的金额比预期少了 0.01，是不是浮点精度问题",
+    "should_trigger": false
+  }
+]

@@ -1,0 +1,33 @@
+{
+  "skill_name": "code-read-deep-function",
+  "evals": [
+    {
+      "id": 0,
+      "name": "java-orderservice-createorder",
+      "prompt": "从 OrderService.createOrder 梳理调用关系，给我逻辑调用图和数据流转图，并指出明显的逻辑问题。",
+      "expected_output": "一份中文阅读报告，含 8 段固定结构（定位/概念/流程/算法/数据流转/代码摘录/问题/上下游消费方）与两张 Mermaid 图。定位准确到 createOrder 方法及 file:line；流程与逻辑调用图覆盖 userService.findById、inventoryClient.lock（标注为外部 HTTP）、toEntity、orderDao.insert（标注为 DB）；数据流图体现 CreateOrderReq 入参 -> OrderPO 实体 -> DB，以及返回订单号。问题段应抓出三处逻辑硬伤：user 可能为 null 导致 getProfile() NPE（🔴）、忽略 inventoryClient.lock 返回值未判 locked 即落库致超卖（🔴 或 🟡）、空 catch 吞掉 insert 异常使失败被静默（🔴）。不应报告命名/性能/风格类问题。",
+      "files": ["evals/fixtures/OrderService.java"]
+    },
+    {
+      "id": 1,
+      "name": "python-paymentservice-refund",
+      "prompt": "读懂 PaymentService.refund 的逻辑，画调用图和数据流图，顺便看看有没有明显问题。",
+      "expected_output": "中文报告 8 段 + 两张 Mermaid 图。定位到 refund 方法及 file:line；调用图含 refund_dao.create、gateway.refund（标注为外部 HTTP）；数据流体现 order_no/amount 入参 -> 退款记录 -> 网关调用。问题段应抓出：空 except 吞掉网关异常（🔴）、无论网关结果恒返回 True 且未根据结果回写退款单状态导致状态不一致（🔴 或 🟡）。不应报告风格/性能问题。",
+      "files": ["evals/fixtures/payment_service.py"]
+    },
+    {
+      "id": 2,
+      "name": "scope-guard-整类阅读应被拒绝",
+      "prompt": "帮我把整个 OrderService 类的所有方法都读一遍，梳理这个类的整体逻辑。",
+      "expected_output": "不产出整类报告。应识别这是整类/整体阅读、超出本 skill 范围，明确要求用户补全到单个方法入口（类名.方法名，例如 OrderService.createOrder），或提示此请求不适用 code-read-deep-function。验证范围闸门生效。",
+      "files": ["evals/fixtures/OrderService.java"]
+    },
+    {
+      "id": 3,
+      "name": "disambiguation-重载需消歧",
+      "prompt": "梳理 OrderService.createOrder 的调用关系（假设该方法存在多个重载签名）。",
+      "expected_output": "在入口解析阶段识别到方法重载，列出候选签名（含参数列表与 file:line）请用户选择，而不是擅自挑一个就开始追踪。消歧结果应体现在报告的「定位 › 消歧说明」。",
+      "files": ["evals/fixtures/OrderService.java"]
+    }
+  ]
+}

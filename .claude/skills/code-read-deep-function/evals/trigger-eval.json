@@ -1,0 +1,27 @@
+[
+  {"query": "从 OrderService.createOrder 梳理一下调用关系，画个逻辑调用图和数据流图", "should_trigger": true},
+  {"query": "OrderController.submit 这个方法往下都调了啥、又被谁调用的，帮我理清楚", "should_trigger": true},
+  {"query": "读懂 PayService.refund 的逻辑，给我出逻辑调用图和数据流转图，顺便看看有没有明显问题", "should_trigger": true},
+  {"query": "我想搞清楚 UserService.login 这个方法的定位、流程、算法和上下游消费方", "should_trigger": true},
+  {"query": "帮我从 account.transfer 这个函数入口梳理调用链，看看有没有明显的逻辑硬伤", "should_trigger": true},
+  {"query": "(*OrderRepo).Save 这个方法的调用关系和数据流是怎样的，画出来", "should_trigger": true},
+  {"query": "deep read 一下 InventoryService.deduct：调用图、数据流、上下游都给我", "should_trigger": true},
+  {"query": "trace the call graph and data flow of CartService.checkout for me", "should_trigger": true},
+  {"query": "InvoiceService.generate 这个方法读一下，八段报告加两张图，标注外部依赖", "should_trigger": true},
+  {"query": "梳理 NotificationHandler.onMessage 入口往下的逻辑调用关系，并画数据流转图", "should_trigger": true},
+
+  {"query": "帮我把整个 OrderService 类的所有方法都读一遍，梳理这个类的整体逻辑", "should_trigger": false},
+  {"query": "把这个项目的整体业务逻辑给我从头到尾梳理一遍", "should_trigger": false},
+  {"query": "读一下 order_service.py 这个文件是干嘛的", "should_trigger": false},
+  {"query": "src/service 目录下的代码帮我通读一下，讲讲整体结构", "should_trigger": false},
+  {"query": "OrderService 这个类是做什么的", "should_trigger": false},
+  {"query": "梳理一下支付模块的整体调用关系", "should_trigger": false},
+  {"query": "review 一下我这个 PR 有没有 bug、安全和性能问题", "should_trigger": false},
+  {"query": "给 OrderService.createOrder 这个方法加上详细注释", "should_trigger": false},
+  {"query": "这行 stream().collect(toList()) 是什么意思，简单解释下", "should_trigger": false},
+  {"query": "OrderService.createOrder 线上偶发空指针，帮我排查根因怎么修", "should_trigger": false},
+  {"query": "帮我写一个 OrderService.cancelOrder 方法实现取消订单", "should_trigger": false},
+  {"query": "对 auth 模块做一次完整的安全审计", "should_trigger": false},
+  {"query": "从 OrderService.createOrder 出发把能画的图都画了，成套落盘到 docs", "should_trigger": false},
+  {"query": "给 PayService.refund 出一套图集存进仓库，带图例和维护约定", "should_trigger": false}
+]

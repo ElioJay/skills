@@ -1,0 +1,44 @@
+{
+  "eval_name": "eval-1-csv-dedupe-cli",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "dedupe.py 文件存在且非空",
+      "passed": true,
+      "evidence": "size=4317"
+    },
+    {
+      "text": "测试文件存在（test_*.py 或 *_test.py）",
+      "passed": true,
+      "evidence": "matches=['test_dedupe.py']"
+    },
+    {
+      "text": "README.md 存在",
+      "passed": true,
+      "evidence": "files=['README.md']"
+    },
+    {
+      "text": "TRANSCRIPT.md 提到 Plan/方案/阶段（说明走了流程）",
+      "passed": true,
+      "evidence": "# Vibe Coding Workflow — Transcript\n\n按 `vibe-coding-workflow` skill 的 6 阶段闭环开发 `dedupe.py` 的过程记录。\n\n---\n\n## 第 1 阶段：需求理解\n\n"
+    },
+    {
+      "text": "COMMIT_PLAN.md 存在",
+      "passed": true,
+      "evidence": "size=1361"
+    },
+    {
+      "text": "Commit message 是英文（不含中文）",
+      "passed": true,
+      "evidence": "dedupe.py\ntest_dedupe.py\nREADME.md\nfeat(dedupe): add CSV column-based deduplication CLI"
+    },
+    {
+      "text": "测试覆盖至少 2 个边界场景关键词",
+      "passed": true,
+      "evidence": "edge_keyword_hits=5"
+    }
+  ],
+  "passed": 7,
+  "total": 7,
+  "pass_rate": 1.0
+}

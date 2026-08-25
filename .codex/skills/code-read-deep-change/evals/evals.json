@@ -1,0 +1,26 @@
+{
+  "skill_name": "code-read-deep-change",
+  "evals": [
+    {
+      "id": 0,
+      "name": "change-读懂sample.diff的影响半径",
+      "prompt": "帮我读懂 evals/fixtures/sample.diff 这次变更改了什么、波及谁、有哪些风险点。",
+      "expected_output": "一份中文变更阅读报告，且明确是『理解变更』而非质量评分/能否合的评判。含 8 段固定结构（变更范围/改了什么/意图推断/影响半径/关联测试/风险面/问题/建议下一步）与一张 Mermaid 影响半径图（中心=被改符号 OrderService.createOrder，四周=受影响的调用方/消费方/下游契约）。变更范围应落到符号级：识别出 OrderService.createOrder 签名变更（新增 String couponCode 参数）。改了什么应说清：新增 couponService.discountFor 依赖调用、po.setDiscount(discount) 写入新字段，效果是订单落库内容改变。意图推断应为『按优惠券计算抵扣』（结合新增注释/上下文，证据不足处标推断）。影响半径/风险面应指出：OrderController 等调用 createOrder(req) 的旧调用点需同步改为 createOrder(req, couponCode)（diff 未包含该同步修改）、couponService 未见注入/装配、po.setDiscount 依赖 OrderPO 新增对应 setter。关联测试应指出缺失（diff 内未见对应测试，签名/行为变化无测试覆盖）。深挖某受影响调用方应附向下委派（→ code-read-deep-function/file），沿受影响线索追到底附委派 trace。不应给变更打质量分或判断该不该合（越界质量/安全/性能判断应导流 code-review-deep-zh）。",
+      "files": ["evals/fixtures/sample.diff"]
+    },
+    {
+      "id": 1,
+      "name": "scope-guard-读现有单方法应改道function",
+      "prompt": "读一下 OrderService.createOrder 这个方法的调用链和数据流。",
+      "expected_output": "不产出变更阅读报告。应识别这是『读现有代码的单个方法这一个容器』，引导改用 code-read-deep-function；并说明本 skill 读的是『一次变更（diff/commit/PR）』，若有变更请提供。验证容器改道闸门生效。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "scope-guard-质量评判应改道review",
+      "prompt": "review 这个 diff 有没有 bug、安全和性能问题，能不能合。",
+      "expected_output": "不产出变更阅读报告。应识别这是『质量/安全/性能评判 + 该不该合』，引导改用 code-review-deep-zh；并说明本 skill 只做『理解变更』（改了什么/为什么/波及谁/风险点），不做质量评分或合并判断。验证『即便对象是 diff，意图是评判则改道 review』的闸门生效。",
+      "files": []
+    }
+  ]
+}

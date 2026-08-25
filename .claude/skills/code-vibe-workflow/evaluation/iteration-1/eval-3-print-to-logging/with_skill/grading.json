@@ -1,0 +1,39 @@
+{
+  "eval_name": "eval-3-print-to-logging",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "hello.py 含 import logging",
+      "passed": true,
+      "evidence": "import logging\nfrom pathlib import Path\n\n# 用文件名（不含扩展名）作为 logger 名，满足\"logger 名用文件名\"的要求\nlogger = logging.getLogger(Path(__file__).stem)\n# 配置 INFO 级别输出，确保 INFO 日志可"
+    },
+    {
+      "text": "hello.py 不再含 print( 调用",
+      "passed": true,
+      "evidence": "ok"
+    },
+    {
+      "text": "hello.py 调用 logger 的 .info(",
+      "passed": true,
+      "evidence": "ok"
+    },
+    {
+      "text": "TRANSCRIPT.md 存在",
+      "passed": true,
+      "evidence": "len=873"
+    },
+    {
+      "text": "TRANSCRIPT.md 明确说明识别为简单任务并退出完整流程（with_skill 应有的判断）",
+      "passed": true,
+      "evidence": "# TRANSCRIPT\n\n## 决策：应用\"主动退出本流程\"规则（选项 a）\n\n依据 `vibe-coding-workflow/SKILL.md` 中\"边界与例外\"小节：\n> **何时主动退出本流程**：当你发现需求实际上极简（10 行代码以内），明确告诉用户\"这个不用走完整流程，直接改了\"，并退出\n\n以及\"不触发\"列表中：\n> - 单行/单段修改（直接改即可）\n\n## 判断理由\n\n1. **改动范围**：单文件、单一目的的替换（print → logging）\n2. **代码体量**：最终文件 < 10 行，远低于触发阈值\n3. **无跨文件影响**：不涉及多模块、无 schema 变更"
+    },
+    {
+      "text": "没有过度产出（无独立测试、无 Plan 文档）",
+      "passed": true,
+      "evidence": "extras=[]"
+    }
+  ],
+  "passed": 6,
+  "total": 6,
+  "pass_rate": 1.0
+}
