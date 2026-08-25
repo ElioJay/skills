@@ -1,51 +1,124 @@
-# Skills
+# Skills for Practical Engineering
 
-面向 Claude Code 与 Codex 的可复用开发技能集合，涵盖代码阅读、代码审查、浏览器自动化、安全审计、开发工作流和辅助写作。
+[![License](https://img.shields.io/github/license/ElioJay/skills)](./LICENSE)
+[![Claude Code](https://img.shields.io/badge/Claude_Code-supported-7C3AED)](./.claude/skills)
+[![Codex](https://img.shields.io/badge/Codex-supported-111827)](./.codex/skills)
 
-## 目录
+一组用于真实软件工程工作的 Agent Skills：读代码、做审查、推进开发、自动化浏览器，并在发布前检查敏感信息。
 
-- `.claude/skills/`：Claude Code 技能。
-- `.codex/skills/`：Codex 技能。
-- `.claude/agents/`：Claude Code 子代理定义。
-- `.claude/commands/`：Claude Code 命令。
-- `.claude/rules/`：项目规则示例。
-- `.claude/output-styles/`：输出风格示例。
+这些技能不试图接管整个开发过程。每个技能只解决一个边界清楚的问题，可以单独使用，也可以按任务组合。你仍然掌握范围、技术决策和最终提交。
 
-## Skills
+## 快速安装
+
+### 方式一：克隆整个仓库
+
+```bash
+git clone https://github.com/ElioJay/skills.git
+```
+
+根据使用的 Agent，复制需要的技能目录：
+
+- Claude Code：`.claude/skills/<skill-name>/`
+- Codex：`.codex/skills/<skill-name>/`
+
+技能目录应整体复制。`SKILL.md` 是入口，旁边的 `references`、`scripts`、`assets` 和 `evals` 可能是运行所需资源。
+
+### 方式二：只取一个技能
+
+```bash
+git clone --depth 1 https://github.com/ElioJay/skills.git
+```
+
+然后仅复制目标技能在对应宿主目录下的完整子目录。不要只复制 `SKILL.md`。
+
+## 为什么需要这些技能
+
+### 1. 代码读过了，却没有真正建立系统地图
+
+`code-read-deep-*` 家族按方法、文件、模块、项目、横切线索和单次变更六个视角组织阅读结果。它们强调入口、依赖、数据流和影响半径，而不是把源码换一种说法复述一遍。
+
+### 2. 功能做出来了，但过程不可验证
+
+`code-vibe-workflow` 把需求、计划、实现、测试、审查和提交连成可检查的闭环；`design-pattern-advisor` 则先通过 YAGNI 闸门，再判断设计模式是否真的必要。
+
+### 3. Review 只看风格，漏掉真正的风险
+
+`code-review-deep-zh` 从正确性、安全、性能、可靠性、架构、数据完整性、可维护性、一致性、可观测性和文档十个维度并行审查。
+
+### 4. 发布之前，不确定仓库是否夹带隐私
+
+`audit-remote-secret-leaks` 同时检查远程历史和本地待推送内容，区分真实泄露、占位示例和未推送风险，并要求证据脱敏。
+
+### 5. Agent 需要看到真实页面，而不仅是猜 UI
+
+`automation-playwright` 用 Playwright CLI 驱动真实浏览器，适合表单操作、截图、数据提取和 UI 流程排查。
+
+## Skill 参考
+
+标记说明：`Claude + Codex` 表示仓库同时提供两种宿主版本；`Claude` 表示当前仅提供 Claude Code 版本。
 
 ### security
 
-| Skill | 说明 |
-|-------|------|
-| `audit-remote-secret-leaks` | 审计 Git 远程历史与本地待推送内容中的敏感信息泄露风险。 |
+| Skill | 宿主 | 用途 |
+|---|---|---|
+| [`audit-remote-secret-leaks`](./.claude/skills/audit-remote-secret-leaks/SKILL.md) | Claude + Codex | 审计 Git 历史、工作区、ignored 文件和 stash 中的敏感信息风险。 |
 
-### development
+### 自动化
 
-| Skill | 说明 |
-|-------|------|
-| `automation-playwright` | 通过 Playwright CLI 自动化真实浏览器。 |
-| `code-annotating` | 为代码补充聚焦于意图、约束和取舍的注释。 |
-| `code-read-deep-change` | 阅读一次 diff、commit 或 PR 的变更与影响半径。 |
-| `code-read-deep-file` | 通读单个源文件并生成结构与依赖报告。 |
-| `code-read-deep-function` | 从单个方法入口梳理调用链和数据流。 |
-| `code-read-deep-module` | 阅读单个模块、包或目录的结构与依赖。 |
-| `code-read-deep-project` | 阅读整个项目并生成系统与模块架构图。 |
-| `code-read-deep-trace` | 跨文件、跨模块追踪业务能力或数据项。 |
-| `code-review-deep-zh` | 从十个维度执行中文深度代码审查。 |
-| `code-vibe-workflow` | 按需求、计划、编码、测试、审查和提交推进功能开发。 |
-| `codebase-diagrams` | 为代码库生成 Mermaid 架构图集（Claude Code）。 |
-| `design-pattern-advisor` | 评估设计模式是否必要，并给出最小可行建议。 |
-| `naturalize-zh` | 去除中文文本中的机器化表达（Claude Code）。 |
-| `skill-creator-guide` | 通过对话引导创建新的技能草稿。 |
+| Skill | 宿主 | 用途 |
+|---|---|---|
+| [`automation-playwright`](./.claude/skills/automation-playwright/SKILL.md) | Claude + Codex | 通过终端自动化真实浏览器。 |
 
-部分技能同时提供 `.claude` 与 `.codex` 版本；仅适用于单一宿主的技能只保留对应目录。
+### 代码阅读
 
-## 使用
+| Skill | 宿主 | 用途 |
+|---|---|---|
+| [`code-read-deep-function`](./.claude/skills/code-read-deep-function/SKILL.md) | Claude + Codex | 从明确的方法入口追踪调用链与数据流。 |
+| [`code-read-deep-file`](./.claude/skills/code-read-deep-file/SKILL.md) | Claude + Codex | 通读单个源文件，输出结构与依赖地图。 |
+| [`code-read-deep-module`](./.claude/skills/code-read-deep-module/SKILL.md) | Claude + Codex | 阅读单个模块、包或目录并检查内部依赖。 |
+| [`code-read-deep-project`](./.claude/skills/code-read-deep-project/SKILL.md) | Claude + Codex | 建立项目级技术栈、容器和模块依赖全景。 |
+| [`code-read-deep-trace`](./.claude/skills/code-read-deep-trace/SKILL.md) | Claude + Codex | 沿业务能力、关注点或字段跨模块追踪。 |
+| [`code-read-deep-change`](./.claude/skills/code-read-deep-change/SKILL.md) | Claude + Codex | 解释一次 diff、commit 或 PR 的意图与影响半径。 |
 
-克隆仓库后，将需要的技能目录复制或链接到对应宿主的技能目录。每个技能的 `SKILL.md` 是入口，配套的 `references`、`scripts`、`assets`、`evals` 等目录应一并保留。
+### 开发与审查
 
-本地配置文件（例如 `local-config.json` 与 `.claude/settings.local.json`）已由 `.gitignore` 排除，不应提交到仓库。
+| Skill | 宿主 | 用途 |
+|---|---|---|
+| [`code-annotating`](./.claude/skills/code-annotating/SKILL.md) | Claude + Codex | 为非显而易见的意图、约束和取舍补充注释。 |
+| [`code-review-deep-zh`](./.claude/skills/code-review-deep-zh/SKILL.md) | Claude + Codex | 执行十维度中文深度代码审查。 |
+| [`code-vibe-workflow`](./.claude/skills/code-vibe-workflow/SKILL.md) | Claude + Codex | 推进需求到提交的完整开发闭环。 |
+| [`design-pattern-advisor`](./.claude/skills/design-pattern-advisor/SKILL.md) | Claude + Codex | 判断是否需要设计模式，并给出最小实现。 |
+| [`codebase-diagrams`](./.claude/skills/codebase-diagrams/SKILL.md) | Claude | 生成项目、模块和方法级 Mermaid 图集。 |
+
+### 写作与扩展
+
+| Skill | 宿主 | 用途 |
+|---|---|---|
+| [`naturalize-zh`](./.claude/skills/naturalize-zh/SKILL.md) | Claude | 去除中文文本中的机器化表达。 |
+| [`skill-creator-guide`](./.claude/skills/skill-creator-guide/SKILL.md) | Claude + Codex | 通过对话生成结构清楚的 Skill 草稿。 |
+
+## 仓库结构
+
+```text
+.
+├── .claude/
+│   ├── skills/          # Claude Code Skills
+│   ├── agents/          # 子代理定义
+│   ├── commands/        # 命令提示
+│   ├── rules/           # 项目规则示例
+│   └── output-styles/   # 输出风格
+├── .codex/
+│   └── skills/          # Codex Skills
+├── tests/               # 仓库级检查
+└── LICENSE              # Apache License 2.0
+```
+
+本地覆盖配置（如 `.claude/settings.local.json`）不应提交。敏感值应通过环境变量或被忽略的本地配置注入。
+
+## 验证
+
+仓库中的 JSON、PowerShell、Python、JavaScript 和 Shell 文件会在发布前做语法检查；Mermaid 图块和关键 Skill 契约也有对应校验。
 
 ## 许可证
 
-本仓库采用 [Apache License 2.0](LICENSE) 开源。子目录中附带的第三方 `LICENSE` 或 `NOTICE` 文件继续适用于对应组件。
+本仓库采用 [Apache License 2.0](./LICENSE)。子目录自带的第三方 `LICENSE` 或 `NOTICE` 继续适用于对应组件。
