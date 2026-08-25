@@ -10,7 +10,48 @@
 
 ## 快速安装
 
-### 方式一：克隆整个仓库
+需要先安装 Node.js（自带 npm）。推荐使用官方 [`skills`](https://github.com/vercel-labs/skills) CLI，它会识别仓库中的 `SKILL.md`，并将技能安装到所选 Agent 的目录。
+
+### 方式一：使用 npx 安装（推荐）
+
+先查看仓库中可安装的技能：
+
+```bash
+npx skills@latest add ElioJay/skills --list
+```
+
+交互式选择技能和 Agent：
+
+```bash
+npx skills@latest add ElioJay/skills
+```
+
+也可以直接指定一个或多个技能，并同时安装给 Claude Code 与 Codex：
+
+```bash
+npx skills@latest add ElioJay/skills \
+  --skill code-read-deep-project \
+  --skill audit-remote-secret-leaks \
+  --agent claude-code \
+  --agent codex
+```
+
+默认安装到当前项目；添加 `-g` 会安装到用户级目录，添加 `-y` 会跳过确认，适合自动化脚本：
+
+```bash
+npx skills@latest add ElioJay/skills \
+  --skill code-read-deep-project \
+  --agent codex \
+  -g -y
+```
+
+更新已安装的技能：
+
+```bash
+npx skills update
+```
+
+### 方式二：克隆整个仓库
 
 ```bash
 git clone https://github.com/ElioJay/skills.git
@@ -23,7 +64,7 @@ git clone https://github.com/ElioJay/skills.git
 
 技能目录应整体复制。`SKILL.md` 是入口，旁边的 `references`、`scripts`、`assets` 和 `evals` 可能是运行所需资源。
 
-### 方式二：只取一个技能
+### 方式三：手动只取一个技能
 
 ```bash
 git clone --depth 1 https://github.com/ElioJay/skills.git
