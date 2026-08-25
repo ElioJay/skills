@@ -2,18 +2,26 @@
 
 Use the wrapper script unless the CLI is already installed globally:
 
+Run the wrapper from the skill directory:
+
 ```bash
-export CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
-export PWCLI="$CODEX_HOME/skills/playwright/scripts/playwright_cli.sh"
-"$PWCLI" --help
+./scripts/playwright_cli.sh --help
 ```
 
-User-scoped skills install under `$CODEX_HOME/skills` (default: `~/.codex/skills`).
+```powershell
+.\scripts\playwright_cli.ps1 --help
+```
 
 Optional convenience alias:
 
 ```bash
-alias pwcli="$PWCLI"
+alias pwcli='./scripts/playwright_cli.sh'
+```
+
+PowerShell equivalent:
+
+```powershell
+function pwcli { & .\scripts\playwright_cli.ps1 @args }
 ```
 
 ## Core

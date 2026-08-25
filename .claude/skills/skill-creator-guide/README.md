@@ -1,6 +1,6 @@
 # skill-creator-guide
 
-这是一个用于创建新 Claude Code skill 的引导型全局 skill。
+这是一个用于创建新 Claude Code skill 的引导型 skill。
 
 ## 功能
 
@@ -8,6 +8,8 @@
 - 再确认新 skill 的主要用途
 - 必要时继续追问
 - 最终生成可直接使用的 skill 草稿
+
+项目级 skill 推荐放在相对目录 `./.claude/skills/<skill-name>/`。
 
 ## 典型触发方式
 

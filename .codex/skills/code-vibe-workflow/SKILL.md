@@ -222,7 +222,7 @@ description: Vibe Coding 全流程开发 skill —— 用户要"开发/实现/�
 
 ## 全流程节奏检查表（TodoList 建议）
 
-进入本 skill 后，立刻把以下任务写入 TodoWrite，逐项推进：
+进入本 skill 后，立刻把以下任务写入宿主提供的任务计划工具（Claude Code 使用 `TodoWrite`，Codex 使用 `update_plan`），逐项推进：
 
 1. ☐ 第 1 阶段：复述需求 + 提问 + 验收标准
 2. ☐ 第 2 阶段：Plan（2-3 方案 + 推荐 + 文件清单）→ 等用户确认

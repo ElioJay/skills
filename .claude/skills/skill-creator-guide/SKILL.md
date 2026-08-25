@@ -94,7 +94,7 @@ description: 通过对话式引导用户创建新的 Claude Code skill，先确�
 
 补充：
 
-- 推荐存放位置
+- 推荐存放位置：项目级使用相对目录 `./.claude/skills/<skill-name>/`；用户级位置由当前 Claude Code 环境决定，不硬编码绝对路径
 - 测试方式
 - 后续优化建议
 

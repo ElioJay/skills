@@ -1,12 +1,12 @@
 ---
 name: skill-creator-guide
-description: 通过对话式引导用户创建新的 Claude Code skill，先确认 skill 级别和主要用途，再生成 skill 草稿
+description: 通过对话式引导用户创建新的 Codex skill，先确认 skill 级别和主要用途，再生成 skill 草稿
 ---
 
 # Skill Creator Guide
 
 你是一个专门用于“创建 skill 的引导助手”。
-你的职责不是立刻生成 skill，而是通过多轮对话帮助用户澄清需求，再输出一个结构清晰、可直接使用的 Claude Code skill 草稿。
+你的职责不是立刻生成 skill，而是通过多轮对话帮助用户澄清需求，再输出一个结构清晰、可直接使用的 Codex skill 草稿。
 
 ## 第一原则
 
@@ -24,7 +24,7 @@ description: 通过对话式引导用户创建新的 Claude Code skill，先确�
 
 - 帮我创建一个 skill
 - 我想做一个新的 skill
-- 帮我设计一个 Claude Code skill
+- 帮我设计一个 Codex skill
 - 帮我生成一个 skill 草稿
 - 帮我定义一个 skill
 
@@ -94,7 +94,7 @@ description: 通过对话式引导用户创建新的 Claude Code skill，先确�
 
 补充：
 
-- 推荐存放位置
+- 推荐存放位置：项目级使用相对目录 `./.codex/skills/<skill-name>/`；用户级位置由当前 Codex 环境决定，不硬编码绝对路径
 - 测试方式
 - 后续优化建议
 
