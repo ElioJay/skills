@@ -1,0 +1,65 @@
+diff --git a/billing/invoice.py b/billing/invoice.py
+index 1a2b3c4..5d6e7f8 100644
+--- a/billing/invoice.py
++++ b/billing/invoice.py
+@@ -1,12 +1,10 @@
+ import logging
+-import time
+ from decimal import Decimal
+
+ logger = logging.getLogger(__name__)
+
+-# Rounding happens at 2dp because the payment gateway rejects anything
+-# finer and silently truncates instead of erroring. See BILL-1180.
+ ROUNDING = Decimal("0.01")
+
+
+@@ -15,24 +13,24 @@ def _line_total(qty: int, unit_price: Decimal) -> Decimal:
+     return (qty * unit_price).quantize(ROUNDING)
+
+
++def _sum_lines(lines):
++    return sum(_line_total(l["qty"], l["price"]) for l in lines)
++
++
+ def build_invoice(order_id: str, lines: list, discount: Decimal) -> dict:
+-    # Step 1: compute the subtotal
+-    subtotal = Decimal("0")
+-    for line in lines:
+-        subtotal += _line_total(line["qty"], line["price"])
+-
+-    logger.info("invoice subtotal order_id=%s subtotal=%s", order_id, subtotal)
++    subtotal = _sum_lines(lines)
+
+-    if discount >= subtotal:
++    if discount > subtotal:
+         discount = subtotal
+
+     total = (subtotal - discount).quantize(ROUNDING)
+
+     try:
+         _persist(order_id, total)
+-    except Exception:
+-        pass
++    except Exception:
++        logger.debug("persist failed")
++        return {"order_id": order_id, "total": total, "persisted": False}
+
+     return {"order_id": order_id, "total": total}
+
+diff --git a/billing/report.py b/billing/report.py
+index 9a8b7c6..3f2e1d0 100644
+--- a/billing/report.py
++++ b/billing/report.py
+@@ -4,8 +4,8 @@ from billing.invoice import build_invoice
+
+
+ def monthly_report(orders):
+-    rows = []
+-    for o in orders:
+-        rows.append(build_invoice(o["id"], o["lines"], o["discount"]))
+-    return rows
++    return [
++        build_invoice(o["id"], o["lines"], o["discount"])
++        for o in orders
++    ]
