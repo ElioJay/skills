@@ -100,6 +100,12 @@ git clone --depth 1 https://github.com/ElioJay/skills.git
 并单独识别「AI 自作主张加的缓存、重试、配置项」。它先列清单再动手，红线（对外 API、日志埋点、TODO 标记、
 框架样板）一律跳过并逐条记录原因；`--audit` 用来回头审计清理本身有没有删过头。
 
+### 7. 线上出了问题，翻日志什么也看不出来
+
+`code-logging` 治的是代码里的 log 语句本身：消息是否自包含、级别用得对不对、关键路径有没有打点、
+异常有没有丢堆栈、traceId 在线程池和消息队列里断没断。按风险分档确认——格式问题批量改，
+级别变更和新增日志逐项确认，日志泄露隐私只报不改。不碰 logback 配置和采集端。
+
 ## Skill 参考
 
 标记说明：`Claude + Codex` 表示仓库同时提供两种宿主版本；`Claude` 表示当前仅提供 Claude Code 版本。
@@ -133,6 +139,7 @@ git clone --depth 1 https://github.com/ElioJay/skills.git
 |---|---|---|
 | [`code-annotating`](./.claude/skills/code-annotating/SKILL.md) | Claude + Codex | 为非显而易见的意图、约束和取舍补充注释。 |
 | [`code-slimming`](./.claude/skills/code-slimming/SKILL.md) | Claude + Codex | 删除新写代码中的冗余，只做减法与就地内联。 |
+| [`code-logging`](./.claude/skills/code-logging/SKILL.md) | Claude + Codex | 规范代码中的日志语句，补齐打点与断掉的 traceId。 |
 | [`code-review-deep-zh`](./.claude/skills/code-review-deep-zh/SKILL.md) | Claude + Codex | 执行十维度中文深度代码审查。 |
 | [`code-vibe-workflow`](./.claude/skills/code-vibe-workflow/SKILL.md) | Claude + Codex | 推进需求到提交的完整开发闭环。 |
 | [`design-pattern-advisor`](./.claude/skills/design-pattern-advisor/SKILL.md) | Claude + Codex | 判断是否需要设计模式，并给出最小实现。 |
