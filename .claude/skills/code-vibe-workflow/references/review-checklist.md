@@ -1,6 +1,6 @@
 # Code Review 维度清单
 
-本文件是 vibe-coding-workflow 第 5 阶段（Code Review）的配套清单。
+本文件是 code-vibe-workflow 第 5 阶段（Code Review）的配套清单。
 
 ---
 

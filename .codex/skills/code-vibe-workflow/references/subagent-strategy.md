@@ -1,6 +1,6 @@
 # Subagent 委托策略
 
-本文件是 vibe-coding-workflow 的 subagent 使用配套。核心原则：**独立、可并行的任务才派；一旦派出，同一个 message 里多个并发，不要串行**。
+本文件是 code-vibe-workflow 的 subagent 使用配套。核心原则：**独立、可并行的任务才派；一旦派出，同一个 message 里多个并发，不要串行**。
 
 ---
 
