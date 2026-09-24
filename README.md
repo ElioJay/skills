@@ -106,6 +106,12 @@ git clone --depth 1 https://github.com/ElioJay/skills.git
 异常有没有丢堆栈、traceId 在线程池和消息队列里断没断。按风险分档确认——格式问题批量改，
 级别变更和新增日志逐项确认，日志泄露隐私只报不改。不碰 logback 配置和采集端。
 
+### 8. 测试写了一堆，边界和异常却没测到
+
+`code-testing` 先设计、后动手：正常、边界、异常、状态、条件组合五个维度逐项过（并发、权限、数据量按需加查），
+列出用例清单并注明每条预期的依据，你确认后才写。预期来自需求和注释，不照抄实现；两者对不上的标成疑似缺陷，由你裁决。
+能给已有代码补测试、从需求出用例文档（默认 Markdown，可附带导出 docx），也能测试先行；除测试先行要的最小桩外，不改生产代码。
+
 ## Skill 参考
 
 标记说明：`Claude + Codex` 表示仓库同时提供两种宿主版本；`Claude` 表示当前仅提供 Claude Code 版本。
@@ -140,6 +146,7 @@ git clone --depth 1 https://github.com/ElioJay/skills.git
 | [`code-annotating`](./.claude/skills/code-annotating/SKILL.md) | Claude + Codex | 为非显而易见的意图、约束和取舍补充注释。 |
 | [`code-slimming`](./.claude/skills/code-slimming/SKILL.md) | Claude + Codex | 删除新写代码中的冗余，只做减法与就地内联。 |
 | [`code-logging`](./.claude/skills/code-logging/SKILL.md) | Claude + Codex | 规范代码中的日志语句，补齐打点与断掉的 traceId。 |
+| [`code-testing`](./.claude/skills/code-testing/SKILL.md) | Claude + Codex | 先确认用例清单，再写测试代码或用例文档。 |
 | [`code-review-deep-zh`](./.claude/skills/code-review-deep-zh/SKILL.md) | Claude + Codex | 执行十维度中文深度代码审查。 |
 | [`code-vibe-workflow`](./.claude/skills/code-vibe-workflow/SKILL.md) | Claude + Codex | 推进需求到提交的完整开发闭环。 |
 | [`design-pattern-advisor`](./.claude/skills/design-pattern-advisor/SKILL.md) | Claude + Codex | 判断是否需要设计模式，并给出最小实现。 |
