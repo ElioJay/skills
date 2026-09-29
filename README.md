@@ -157,6 +157,7 @@ git clone --depth 1 https://github.com/ElioJay/skills.git
 | [`code-testing`](./.claude/skills/code-testing/SKILL.md) | Claude + Codex | 先确认用例清单，再写测试代码或用例文档。 |
 | [`integration-e2e-testing`](./.claude/skills/integration-e2e-testing/SKILL.md) | Claude + Codex | 编写可重复运行的跨组件和浏览器流程测试。 |
 | [`database-migration`](./.claude/skills/database-migration/SKILL.md) | Claude + Codex | 设计与验证库表和存量数据迁移及恢复路径。 |
+| [`performance-investigation`](./.claude/skills/performance-investigation/SKILL.md) | Claude + Codex | 用基线、剖析和复测定位并验证性能瓶颈。 |
 | [`code-review-deep-zh`](./.claude/skills/code-review-deep-zh/SKILL.md) | Claude + Codex | 执行十维度中文深度代码审查。 |
 | [`code-vibe-workflow`](./.claude/skills/code-vibe-workflow/SKILL.md) | Claude + Codex | 推进需求到提交的完整开发闭环。 |
 | [`design-pattern-advisor`](./.claude/skills/design-pattern-advisor/SKILL.md) | Claude + Codex | 判断是否需要设计模式，并给出最小实现。 |

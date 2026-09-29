@@ -1,0 +1,14 @@
+[
+  {"query": "这个接口上线后 p95 从 200ms 变成 2s，帮我查瓶颈", "should_trigger": true},
+  {"query": "服务内存持续上涨，找出主要分配来源并验证修复", "should_trigger": true},
+  {"query": "SQL 查询从 50ms 变成 3s，结合执行计划分析", "should_trigger": true},
+  {"query": "给这个批处理做基线测量、优化，再对比前后吞吐", "should_trigger": true},
+  {"query": "CPU 打满但吞吐没涨，帮我用 profile 找原因", "should_trigger": true},
+  {"query": "为什么高并发下线程池排队越来越长？要有测量证据", "should_trigger": true},
+  {"query": "全面审查这个 PR 的正确性、安全和性能", "should_trigger": false},
+  {"query": "订单接口报空指针，定位并修复", "should_trigger": false},
+  {"query": "给 orders 表新增索引的 Flyway 迁移", "should_trigger": false},
+  {"query": "新增订单查询接口", "should_trigger": false},
+  {"query": "给登录流程写浏览器端到端测试", "should_trigger": false},
+  {"query": "什么是 p99 延迟？", "should_trigger": false}
+]
