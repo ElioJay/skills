@@ -1,0 +1,14 @@
+[
+  {"query": "给 orders 表新增非空字段，存量几百万行怎么迁移", "should_trigger": true},
+  {"query": "写一个 Flyway 迁移脚本并规划回填和上线顺序", "should_trigger": true},
+  {"query": "把旧的 user_name 列改名，老版本服务还会运行一天", "should_trigger": true},
+  {"query": "线上历史订单数据需要补齐状态，设计可恢复的数据迁移", "should_trigger": true},
+  {"query": "这次数据库迁移失败了一半，怎么核对并安全恢复", "should_trigger": true},
+  {"query": "评估删除旧字段的迁移脚本是否能回滚", "should_trigger": true},
+  {"query": "这个 SELECT 为什么这么慢，帮我看执行计划", "should_trigger": false},
+  {"query": "给订单服务加一个普通查询接口", "should_trigger": false},
+  {"query": "解释数据库索引的 B+ 树原理", "should_trigger": false},
+  {"query": "全面审查这个 PR 的质量", "should_trigger": false},
+  {"query": "把 CSV 文件整理成 Excel", "should_trigger": false},
+  {"query": "给数据库连接池补日志", "should_trigger": false}
+]
