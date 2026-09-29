@@ -1,0 +1,14 @@
+[
+  {"query": "把 OrderService 里计算价格的逻辑提取出来，保持接口和结果不变", "should_trigger": true},
+  {"query": "重构这个模块的内部依赖，外部行为不能变", "should_trigger": true},
+  {"query": "把这几个重复分支合并，先锁定现有行为再改", "should_trigger": true},
+  {"query": "把方法搬到合适的类里并更新调用方，不能改变异常语义", "should_trigger": true},
+  {"query": "这个类太复杂，想拆分职责，但保持原 API 兼容", "should_trigger": true},
+  {"query": "帮我重构一下这个项目", "should_trigger": true},
+  {"query": "删掉刚生成的死代码和一次性 wrapper", "should_trigger": false},
+  {"query": "订单接口报空指针，帮我定位并修复", "should_trigger": false},
+  {"query": "新增一个订单批量导出功能", "should_trigger": false},
+  {"query": "这里该不该用策略模式？", "should_trigger": false},
+  {"query": "全面审查这个 PR 的质量和安全性", "should_trigger": false},
+  {"query": "解释这个模块的调用关系", "should_trigger": false}
+]

@@ -152,6 +152,7 @@ git clone --depth 1 https://github.com/ElioJay/skills.git
 | [`code-slimming`](./.claude/skills/code-slimming/SKILL.md) | Claude + Codex | 删除新写代码中的冗余，只做减法与就地内联。 |
 | [`code-logging`](./.claude/skills/code-logging/SKILL.md) | Claude + Codex | 规范代码中的日志语句，补齐打点与断掉的 traceId。 |
 | [`systematic-debugging`](./.claude/skills/systematic-debugging/SKILL.md) | Claude + Codex | 从具体故障的现象和证据验证根因，按需完成最小修复与回归。 |
+| [`behavior-preserving-refactor`](./.claude/skills/behavior-preserving-refactor/SKILL.md) | Claude + Codex | 在重构前后核对可观察行为与测试基线。 |
 | [`code-testing`](./.claude/skills/code-testing/SKILL.md) | Claude + Codex | 先确认用例清单，再写测试代码或用例文档。 |
 | [`code-review-deep-zh`](./.claude/skills/code-review-deep-zh/SKILL.md) | Claude + Codex | 执行十维度中文深度代码审查。 |
 | [`code-vibe-workflow`](./.claude/skills/code-vibe-workflow/SKILL.md) | Claude + Codex | 推进需求到提交的完整开发闭环。 |
