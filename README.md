@@ -4,7 +4,7 @@
 [![Claude Code](https://img.shields.io/badge/Claude_Code-supported-7C3AED)](./.claude/skills)
 [![Codex](https://img.shields.io/badge/Codex-supported-111827)](./.codex/skills)
 
-一组用于真实软件工程工作的 Agent Skills：读代码、做审查、推进开发、自动化浏览器，并在发布前检查敏感信息。
+一组用于真实软件工程工作的 Agent Skills：读代码、排查故障、做审查、推进开发、自动化浏览器，并在发布前检查敏感信息。
 
 这些技能不试图接管整个开发过程。每个技能只解决一个边界清楚的问题，可以单独使用，也可以按任务组合。你仍然掌握范围、技术决策和最终提交。
 
@@ -112,9 +112,14 @@ git clone --depth 1 https://github.com/ElioJay/skills.git
 列出用例清单并注明每条预期的依据，你确认后才写。预期来自需求和注释，不照抄实现；两者对不上的标成疑似缺陷，由你裁决。
 能给已有代码补测试、从需求出用例文档（默认 Markdown，可附带导出 docx），也能测试先行；除测试先行要的最小桩外，不改生产代码。
 
+### 9. 出了故障，只有猜测没有根因证据
+
+`systematic-debugging` 从现象、日志和失败测试入手，按时间线核对实际调用和状态，
+用复现或对照排除假设。用户只要求诊断时保持只读；要求修复时做最小改动，并报告回归验证及未验证部分。
+
 ## Skill 参考
 
-标记说明：`Claude + Codex` 表示仓库同时提供两种宿主版本；`Claude` 表示当前仅提供 Claude Code 版本。
+以下技能均提供 Claude Code 与 Codex 两种宿主版本。
 
 ### security
 
@@ -146,17 +151,18 @@ git clone --depth 1 https://github.com/ElioJay/skills.git
 | [`code-annotating`](./.claude/skills/code-annotating/SKILL.md) | Claude + Codex | 为非显而易见的意图、约束和取舍补充注释。 |
 | [`code-slimming`](./.claude/skills/code-slimming/SKILL.md) | Claude + Codex | 删除新写代码中的冗余，只做减法与就地内联。 |
 | [`code-logging`](./.claude/skills/code-logging/SKILL.md) | Claude + Codex | 规范代码中的日志语句，补齐打点与断掉的 traceId。 |
+| [`systematic-debugging`](./.claude/skills/systematic-debugging/SKILL.md) | Claude + Codex | 从具体故障的现象和证据验证根因，按需完成最小修复与回归。 |
 | [`code-testing`](./.claude/skills/code-testing/SKILL.md) | Claude + Codex | 先确认用例清单，再写测试代码或用例文档。 |
 | [`code-review-deep-zh`](./.claude/skills/code-review-deep-zh/SKILL.md) | Claude + Codex | 执行十维度中文深度代码审查。 |
 | [`code-vibe-workflow`](./.claude/skills/code-vibe-workflow/SKILL.md) | Claude + Codex | 推进需求到提交的完整开发闭环。 |
 | [`design-pattern-advisor`](./.claude/skills/design-pattern-advisor/SKILL.md) | Claude + Codex | 判断是否需要设计模式，并给出最小实现。 |
-| [`codebase-diagrams`](./.claude/skills/codebase-diagrams/SKILL.md) | Claude | 生成项目、模块和方法级 Mermaid 图集。 |
+| [`codebase-diagrams`](./.claude/skills/codebase-diagrams/SKILL.md) | Claude + Codex | 生成项目、模块和方法级 Mermaid 图集。 |
 
 ### 写作与扩展
 
 | Skill | 宿主 | 用途 |
 |---|---|---|
-| [`naturalize-zh`](./.claude/skills/naturalize-zh/SKILL.md) | Claude | 去除中文文本中的机器化表达。 |
+| [`naturalize-zh`](./.claude/skills/naturalize-zh/SKILL.md) | Claude + Codex | 去除中文文本中的机器化表达。 |
 | [`skill-creator-guide`](./.claude/skills/skill-creator-guide/SKILL.md) | Claude + Codex | 通过对话生成结构清楚的 Skill 草稿。 |
 
 ## 仓库结构

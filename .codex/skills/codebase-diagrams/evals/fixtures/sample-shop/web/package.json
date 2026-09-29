@@ -1,0 +1,10 @@
+{
+  "name": "@sample-shop/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "前端：通过 HTTP 调用后端 order 模块（fixture，不参与构建运行）",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {}
+}

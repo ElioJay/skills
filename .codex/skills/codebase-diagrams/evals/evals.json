@@ -1,0 +1,35 @@
+{
+  "skill_name": "codebase-diagrams",
+  "evals": [
+    {
+      "id": 0,
+      "name": "project-polyglot-sample-shop",
+      "prompt": "对 evals/fixtures/sample-shop 这个项目画一套完整的图集，落盘到 sample-shop/docs/diagrams/。",
+      "expected_output": "先声明粒度判定为「项目级，仓库根 = evals/fixtures/sample-shop」。侦察阶段应识别出 4 个模块：order / payment / shared（Java + Gradle，由 settings.gradle 的 include 声明）与 web（TypeScript + npm，package.json），并判定为 polyglot 项目。阶段 4 必须只打断一次，一次性给出：拟画图单（按 diagram-catalog 的判据挑，小项目应收敛到 8~14 张而非 25 张）+ 不画的图及原因（至少应排除并写明原因：状态机图——无带状态迁移的实体；消息拓扑图——无 MQ 依赖；缓存图——无缓存依赖；CI/CD——无 CI 配置文件；分库分表——无分片）+ 落盘根目录 sample-shop/docs/diagrams/ + 将新增的文件清单。产物必须包含：README.md（含一句话系统说明、目录表、图例约定、未画的图及原因、baseline commit、维护约定）与 project/ 下中文命名的图集文件。关键正确性断言：① 模块依赖必须是 order→payment、order→shared、payment→shared，shared 无出边；② 依赖图必须下环检测结论「无环」，只画图不下结论算不合格；③ **web 与 order 之间必须有一条跨语言 HTTP 边**（orderApi.ts 的 fetch(\"/api/orders\") → OrderController.submit），且**必须标记为 ⚠推断**并在图注说明理由（前端路径为 /api/orders，后端只有文档注释提到 POST /orders，前缀不一致且无框架注解可证）；④ 技术栈全景图必须画（polyglot 触发判据），并标出各模块语言；⑤ OrderService.createOrder 忽略 paymentService.charge 返回值这一缺口应在流程图或数据流图上标 ⚠（扣款失败仍返回订单号），但只标不展开评判；⑥ 每张图都有三件套：图注（含依据文件清单）、Mermaid、对照表；⑦ 每张图的依据行写具体文件名而非「订单相关代码」这类模糊描述。不合格信号：把 order/payment/shared/web 画成「前端-后端-数据库」三个方框；把 web 与 order 画成两座孤岛（无跨语言边）；把 ⚠推断 的边画成实线；硬画状态机或消息拓扑凑数；漏写 baseline commit。"
+    },
+    {
+      "id": 1,
+      "name": "module-order",
+      "prompt": "给 evals/fixtures/sample-shop/order 这个模块画一套图，落盘。",
+      "expected_output": "粒度判定为「模块级，模块根 = order」。候选集应按 diagram-catalog 第二节矩阵收敛到模块级（不画部署拓扑、CI/CD、演进时间线这类项目级图），实际入选应远少于 15 张——这个模块只有 2 个类，应诚实收敛到 4~6 张并在索引说明规模。产物落到 sample-shop/docs/diagrams/modules/order/图集.md。关键断言：① 分层图体现 web.OrderController（接入层）→ OrderService（业务层）；② 依赖图区分模块内依赖与模块外依赖（payment、shared 是模块外，应画成上下文边而非内部依赖）；③ 数据流转图节点是数据形态（orderNo + amountCents → Money → boolean ok → String 订单号），不是类名；④ 必须体现 charge 返回值被忽略这一分支缺口。不合格信号：把 payment/shared 当成 order 模块内部组件；数据流图画成调用链图的复制品；为凑数把项目级图搬进模块级图集。"
+    },
+    {
+      "id": 2,
+      "name": "entry-createOrder",
+      "prompt": "从 OrderService.createOrder 出发把能画的图都画了，存到 docs 里。",
+      "expected_output": "粒度判定为「方法入口级，OrderService.createOrder」。按矩阵候选集只有 5,13,14,15,18,20,21,25,27,29 十张，实际入选应为 4~6 张（这个方法很短），落到 docs/diagrams/entries/OrderService.createOrder/图集.md。关键断言：① 必须画调用链图（createOrder → paymentService.charge → new Money）与数据流转图（orderNo/amountCents 入参 → Money 值对象 → boolean ok → String 返回）；② 上下游关系图的上游必须包含 OrderController.submit；③ **分支逻辑图与异常路径图必须体现「charge 返回 false 时没有分支」这一事实**，并标 ⚠——这正是这个方法唯一值得画图的地方；④ 绝不画架构图、部署图、CI/CD 图（矩阵已排除，一个方法没有架构）。不合格信号：给一个 6 行的方法画出 8 张图凑数；画出方法级架构图；漏掉 charge 返回值被忽略这条缺口。"
+    },
+    {
+      "id": 3,
+      "name": "gate-single-file-handoff",
+      "prompt": "给 evals/fixtures/sample-shop/order/src/main/java/com/example/order/OrderService.java 画一套图。",
+      "expected_output": "触发闸门：识别出输入是**单个源文件**，本 skill 不做文件粒度。必须给出标准回应：说明单文件的图只有 2~3 张、够不上成套图集，并给两条路——① 想读懂这个文件并拿结构图与依赖图 → 用 code-read-deep-file；② 想要成套图集 → 按它所在模块 order 画模块级图集，请用户确认模块边界。**不得**擅自开画，也不得默默降级成模块级。不合格信号：直接开始画文件级图集；只说「不适用」却不给替代路径；不问就按模块级画完。"
+    },
+    {
+      "id": 4,
+      "name": "incremental-update",
+      "prompt": "sample-shop 的 docs/diagrams 已经有图集了，代码改了 OrderService.java，更新一下图。",
+      "expected_output": "走增量支线而非全量重画：① 读 docs/diagrams/README.md 取出 baseline commit；② 跑 git diff <baseline>..HEAD --stat 拿变更文件清单；③ 逐张比对图注的「依据」行，只把命中 OrderService.java 的图列入待重画；④ 阶段 4 的确认里要同时列出「待重画 N 张 / 保持不动 M 张」；⑤ 重画后更新 README 的 baseline commit 与「本次变更」段，写明重画了哪几张、因为哪些文件变更、其余未动。若目标不是 git 仓库或找不到 baseline，必须退化为全量重建并在索引写明「无 baseline，本次为全量重建」。不合格信号：不读 baseline 直接全量重画 25 张；重画后不更新 baseline commit；「本次变更」写成「已更新图集」这种无信息量的话。"
+    }
+  ]
+}

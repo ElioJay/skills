@@ -1,0 +1,6 @@
+// order 模块：依赖 shared 与 payment（构建期跨模块依赖）
+plugins { id 'java' }
+dependencies {
+    implementation project(':shared')
+    implementation project(':payment')
+}

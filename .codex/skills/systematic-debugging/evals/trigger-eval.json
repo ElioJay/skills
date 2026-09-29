@@ -1,0 +1,15 @@
+[
+  {"query": "线上昨晚支付偶发失败，这是完整日志和 traceId，帮我定位根因", "should_trigger": true},
+  {"query": "这个接口昨天还正常，今天返回 500；先只读检查，不要改代码", "should_trigger": true},
+  {"query": "单元测试在 CI 里失败，本地通过，帮我找出原因并修复", "should_trigger": true},
+  {"query": "帮我复现并修复 OrderService.createOrder 的空指针异常", "should_trigger": true},
+  {"query": "为什么 Redis 消费者一直重复处理同一条消息？顺着日志和代码排查", "should_trigger": true},
+  {"query": "翻一下这份生产日志，按时间线分析这次故障，先不要改文件", "should_trigger": true},
+  {"query": "服务间请求偶发超时，给我有证据的原因和下一步验证方法", "should_trigger": true},
+  {"query": "读懂 OrderService.createOrder 的调用关系并画图", "should_trigger": false},
+  {"query": "全面审查这个 PR 的安全和性能问题", "should_trigger": false},
+  {"query": "把整个服务的日志格式统一，补齐 traceId", "should_trigger": false},
+  {"query": "给我新建一个订单查询接口", "should_trigger": false},
+  {"query": "帮我给这个类设计单元测试用例", "should_trigger": false},
+  {"query": "把这段代码重构得更简洁", "should_trigger": false}
+]
