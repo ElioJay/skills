@@ -22,7 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 检出
-        uses: actions/checkout@v4
+        # v5 起不再依赖 Node.js 20（已弃用）。
+        uses: actions/checkout@v5
 
       - name: 校验技能库（-Strict：提醒即失败）
         shell: pwsh
@@ -40,7 +41,7 @@ jobs:
           - check-push-remote-skill.ps1
     steps:
       - name: 检出
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 运行 ${{ matrix.test }}
         shell: pwsh
