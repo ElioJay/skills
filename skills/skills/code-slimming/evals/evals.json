@@ -1,0 +1,47 @@
+{
+  "skill_name": "code-slimming",
+  "evals": [
+    {
+      "id": 0,
+      "name": "Python-完整流程-红线与越界并存",
+      "prompt": "这个文件是 AI 刚生成的，感觉一堆没用的东西，帮我精简一下。我当时只要求「发送订单邮件」这一个功能。",
+      "expected_output": "必须先列清单、等确认后再改（默认模式不得直接动手）。清单必须分 [将删]/[待定]/[越界]/[跳过] 四段，[跳过] 段必须完整展开不得折叠。\n\n**[将删] 必须包含**：`OrderFormatter._join_items`（零调用点）；`unused_locale` 参数（未使用）；`serialized = json.dumps(payload)` 与 `debug_copy = list(payload)`（未使用局部变量），随后 `import json` 变为未使用一并删除；`NotifyOptions` 与 `_build_payload` 的 docstring（PY1 逐字复述签名）；`OrderFormatter` 拉平为模块级函数（PY2 伪 class 命名空间，同文件内，不得改文件名）；`_get_sender()` 内联（M15，一行且名字无额外语义）；`except ConnectionError as e: raise e`（PY5）；`if items is not None and items:` 化简为 `if items:`（PY4）；注释 `# Step 1: Define the configuration`、分隔线 `# ---------`、`# Now we build the options`、`# Check the cache first`、`# Send the email`（M26/M27/M28）。\n\n**[待定] 应包含**：`EmailSender` ABC 单实现（PY8/M17）——本 fixture 无 mock 实现，可删，但须说明判断依据。\n\n**[越界] 必须列出且绝不自动删**：整套缓存机制（`use_cache`、`cache_ttl`、`_CACHE`、缓存命中分支、缓存写入）与整套重试机制（`max_retries`、`attempt` 循环、`time.sleep`）。每条必须标注命中信号编号，至少包含 S1（名词差 cache/retry）与 S4（NotifyOptions 单调用点全默认），重试还应命中 S6（圆整数 3）。`timeout: int = 30` 与 `cache_ttl` 从未被读取，应指出。\n\n**红线检查——以下任一被删即判定失败**：\n1. `__all__` 中的 `send_order_email` 与 `OrderNotifier`（对外 API）\n2. 三处 `logger.info` / `logger.warning`（可观测性）\n3. `# TODO: switch to the async transport after the v2 migration lands`（显式标注意图）\n4. **`OrderNotifier.notify` 中的 WORKAROUND 注释及其保护的 `if _CACHE.get(order_id): return True`**——这是关键陷阱：删除越界的缓存机制时会自然波及 `_CACHE`，但此处有兼容红线保护。若在删缓存时静默删掉这段，判定失败；正确做法是指出冲突并要求用户裁决。\n\n改完必须跑 `ruff check` 与 `pytest`（或说明未验证），报告为纯终端输出，不得生成报告文件。",
+      "files": ["evals/fixtures/py-slop-sample.py"]
+    },
+    {
+      "id": 1,
+      "name": "Go-error包装与单实现接口-含mockgen豁免",
+      "prompt": "这段 Go 代码 error 包了好几层但啥信息都没加，接口也定义得莫名其妙，帮我清理一下。任务原本只是「按 id 取订单并格式化价格」。",
+      "expected_output": "**[将删] 必须包含**：`decodeOrder` 里的 `fmt.Errorf(\"%w\", err)` 改回 `return err`（GO1）；`if order.Items != nil { for range order.Items { _ = order } }` 整块（GO6 冗余 nil 检查 + 循环体是空操作）；注释 `// Step 1: define the options`、分隔线、`// Now we make the request`（M27/M28）。\n\n`PriceFormatter` 单实现接口（GO3）可删，但**必须显式说明删除它会连带移除编译期断言 `var _ PriceFormatter = (*usdFormatter)(nil)`**——不得静默删除该断言。\n\n**[待定] 应包含**：`buildURL` 单调用点——函数名确实携带了额外语义（说明了 URL 的构成），不满足 M15 的「名字无额外语义」条件，必须落在判断档而非直接内联。`client.Do` 的错误前缀与上一处重复（都写 `failed to build request`），应上报为信息错误。\n\n**[越界] 必须列出**：`FetchOptions` + `Option` + `WithTimeout`/`WithMaxRetries`/`WithCache` 整套 functional options——唯一构造点且全部默认值（GO10 / S4），配合 S1 名词差（timeout/retry/cache 均不在任务描述中）。绝不自动删。\n\n**红线检查——以下任一被删即判定失败**：\n1. `_ \"net/http/pprof\"` 副作用空白 import\n2. **`OrderStore` 接口**——它带 `//go:generate mockgen`，是 GO3 的明确豁免；虽然本文件内零实现零引用，看起来像死代码，但必须保留并在 [跳过] 段记录原因\n3. `slog.Info(\"fetched order\", ...)`（可观测性）\n4. `// XXX: the legacy pricing endpoint ...` 注释及其保护的 `f.Format(o.Cents)` 调用（兼容红线 + XXX 标记）\n5. struct tag `json:\"id\"` / `json:\"items\"` / `json:\"cents\"`\n\n`FormatOrder` 的未使用 `ctx` 参数：该函数是导出函数（首字母大写），改签名属于对外 API 变更，**只能上报不得直接删**。若直接删除判定失败。",
+      "files": ["evals/fixtures/go-slop-sample.go"]
+    },
+    {
+      "id": 2,
+      "name": "Java-Spring-单实现接口分层-MockBean豁免是核心",
+      "prompt": "这个 Spring 项目每个 Service 都配了个 Interface 但只有一个实现，异常也是随手包一层，帮我处理下。",
+      "expected_output": "**本题的核心判定点是两个单实现接口的区别对待。**\n\n**必须删除 `OrderService` 接口**（JV1）：唯一实现 `OrderServiceImpl`，无 `@Qualifier`/`@Primary`，测试中未被 `@MockBean` 引用。`OrderController` 的注入改为具体类。**`OrderServiceImpl` 的文件名不得更改。**\n\n**必须保留 `NotificationService` 接口**：`OrderServiceTest` 中有 `@MockBean private NotificationService notificationService`。测试中的 mock 即第二个实现，这是 JV1 的明文豁免。若删除此接口，**整题判定失败**——这是本 skill 在 Spring 项目上最容易造成真实破坏的一条。该条必须出现在 [跳过] 段并注明豁免原因。\n\n**[将删] 还须包含**：`catch (DataAccessException e) { throw new RuntimeException(e); }`（JV2 无信息包装，删整个 try/catch 让原异常穿透）；`@Autowired` 字段注入（JV5，保留构造器注入）；`getIdOrNull()`（JV9 `Optional.ofNullable(x).orElse(null)` 恒等操作，且零调用点），随后 `import java.util.Optional` 变为未使用一并删除；`StringHelper.isNotBlank`（零调用点）；注释 `// Step 1: the service contract`、分隔线、`// Constructor for dependency injection`、`// Now we validate the input`、`// send the notification`。\n\n**[待定] 应包含**：`OrderController` 与 `OrderServiceImpl` 中重复的 `isBlank` 校验（JV14/J20 多层重复校验，保留最外层需确认 Service 是否可独立调用）；`findOrder` 上的 `@Transactional`（JV12 只读单查询，需确认是否有懒加载依赖会话）。\n\n**红线检查——以下任一被删即判定失败**：\n1. `serialVersionUID`\n2. `OrderDto` 的无参构造器 `public OrderDto() {}`（Jackson/JPA 要求）\n3. `@Bean OrderMetrics orderMetrics()`（`@Configuration` 内的 `@Bean` 方法无显式调用点属正常）\n4. `log.info(\"order loaded orderId={}\", orderId)`（可观测性）\n5. **`StringHelper.isBlank`**——它命中 JV4（手写 StringUtils），但上方有 `// FIXME: replace with commons-lang3 once the shaded-jar conflict ... (see PAY-2210)`，同时命中「显式标注意图」与「兼容/workaround」两条红线，必须保留并记录跳过原因",
+      "files": ["evals/fixtures/java-spring-slop-sample.java", "evals/fixtures/java-spring-slop-test-sample.java"]
+    },
+    {
+      "id": 3,
+      "name": "review模式-只列不改",
+      "prompt": "--review 看看这个文件有多少废代码，先别动。",
+      "expected_output": "**一行代码都不得修改。** 若产生任何文件写入，判定失败。\n\n输出应是与 eval 0 相同口径的完整清单（[将删]/[待定]/[越界]/[跳过] 四段齐全，[跳过] 完整展开），但 [将删] 段的措辞应体现「这些是可删项」而非「已删」。\n\n不得询问用户是否要应用修改——`--review` 的语义就是本次不改；给出清单即结束。末尾应说明可以去掉 `--review` 重新运行以执行修改。\n\n验证步骤（ruff / pytest）在本模式下不应执行，因为没有改动需要验证。",
+      "files": ["evals/fixtures/py-slop-sample.py"]
+    },
+    {
+      "id": 4,
+      "name": "职责边界-不越权查bug不加注释",
+      "prompt": "帮我精简这个文件，顺便看看有没有 bug，再把注释补全一下。",
+      "expected_output": "必须**明确拒绝越权部分并指路**，而不是照做：查 bug 走 `code-review-deep`，补注释走 `code-annotating`。拒绝要简短（一两句），不得说教，随后正常执行精简部分。\n\n**不得添加任何新注释**。若在输出中新增了 docstring 或行内注释，判定失败。\n\n**不得报告空指针、并发、边界等常规 bug**。唯一允许出现的正确性信息是末尾的 `[附注] 非冗余问题（超出本 skill 职责）` 一节，且仅限四类：吞异常、catch 后只 log 就返回成功、`as any` / 强制解包、只有注释支撑的规则。该节只给类型 + 位置 + 数量 + 一句「建议跑 code-review-deep」，不得展开分析，且这些代码块本身不参与简化。\n\n本 fixture 中 `except Exception: attempt += 1 ... return False` 属于「catch 后 log 并返回非异常值」的形态，应出现在 [附注]，**不得作为可删项进入 [将删]**。",
+      "files": ["evals/fixtures/py-slop-sample.py"]
+    },
+    {
+      "id": 5,
+      "name": "audit模式-审计清理动作本身-必须正交",
+      "prompt": "--audit 帮我复查这次清理，看看有没有删过头或者漏删。",
+      "expected_output": "**必须只使用 `references/audit-checks.md` 的 A1–A10。若把 M/J 检查项重跑一遍并报告代码里还剩哪些冗余，判定失败**——审计的对象是清理动作，不是代码。\n\n输出按严重度分三组：违约 / 遗漏 / 可疑。每条引用检查编号并给出改动前后的具体行。\n\n**「违约」组必须包含以下全部五条，漏任意一条即判定失败**：\n1. **A2 红线被删**——`logger.info(\"invoice subtotal ...\")` 被删除，命中可观测性红线。这是本题最高价值项：审计是唯一会去看「被删掉了什么」的一遍。\n2. **A8 有信息量的注释被删**——`# Rounding happens at 2dp because the payment gateway rejects anything finer ... See BILL-1180.` 含意图词 `because` 且带 issue 引用，必须保留却被删。\n3. **A7 净增了东西**——新增 `_sum_lines` 函数。减法专项不得引入新符号，「顺手抽了个 helper」属越界。\n4. **A1 行为改变**——`if discount >= subtotal:` 改成 `if discount > subtotal:`。边界条件变了：`discount == subtotal` 时旧代码会夹逼，新代码不会。\n5. **A10 偷偷修了 bug**——`except Exception: pass` 被改成加日志并返回 `persisted: False`。吞异常属 `[附注]` 类，必须前后逐字节一致；即使新行为更好也是违约，行为变更该走独立任务。\n\n**「可疑」组应包含**：A6——本次清理没有任何验证痕迹（无静态检查、无测试），且未声明「未验证」。\n\n**不应报告的**：`report.py` 里把 for 循环改成列表推导式，属于就地等价化简，不违约、不改行为、不增符号，正常通过；`import time` 的删除是合法的未使用 import 清理。若把这两条列为问题，说明审计清单被误用为代码检查清单。\n\n若某条检查未触发，不得为凑数硬报。",
+      "files": ["evals/fixtures/bad-cleanup.diff"]
+    }
+  ]
+}

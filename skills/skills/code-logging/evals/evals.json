@@ -1,0 +1,47 @@
+{
+  "skill_name": "code-logging",
+  "evals": [
+    {
+      "id": 0,
+      "name": "Java-完整流程-分档确认与两条红线",
+      "prompt": "帮我把这个 Spring 服务的日志规范一下，现在出问题翻日志什么也看不出来。",
+      "expected_output": "必须先分档列出发现、按档确认后再改；**任何在 F 档确认之前发生的写入都判定失败**。五档必须分开呈现，不得合并成一张清单。\n\n**【F 格式类】必须包含**：`log.info(\"进入方法\")`（F2）；`log.error(\"参数不合法: \" + req)` 的拼接（F1，级别问题另计入 S）；`log.info(\"success\")`（F2+F3，缺 orderNo）；`log.info(\"处理商品 \" + item.getSkuId())` 的拼接（F1）；**`log.info(\"订单创建完成 orderNo={} itemCount={}\", orderNo, size, resp.getTradeNo())` 两个占位符三个参数（F9）——必须指出这条当前输出就是错的**。\n\n**【S 语义类】必须逐项确认，且必须包含**：\n1. **S1** —— `log.error(\"参数不合法\")` 是参数校验失败，降 WARN。\n2. **S3** —— `refund` 中 `log.error(\"退款失败\", e); throw e;`。**必须先确认最终处理者存在**：`GlobalExceptionHandler.handle` 会 `log.error(\"请求处理失败\", e)`。确认到了才删这条；若未做该确认就直接删，判定失败。\n3. **S4** —— `log.error(\"退款异常: \" + e.getMessage())` 堆栈丢失，改为把 `e` 作为最后一个参数传入。\n4. **S5** —— `syncStatus` 的 `e.printStackTrace()`；`cleanupExpired` 的空 catch。\n5. **S6** —— 循环体内 `log.info(\"处理商品 ...\")`，改为循环后汇总一条。\n\n**【P 漏打类】必须包含**：`payGateway.pay(...)` 前后无日志（P2）；`createOrder` 无出口日志与 costMs（P1/F4）；`OrderController.create` 无入口出口（P1）；`@Scheduled reconcile` 完全无日志（P5）；`@Async notifyDownstream` 只有开始没有结束（P5）。每项必须给出插入位置与建议语句，逐项确认。\n\n**【T 断链类】必须命中且只命中一处**：`AsyncConfig.orderExecutor` 没有 `TaskDecorator`，`@Async` 方法里 traceId 为空（T2）。**必须先说明项目已有 MDC 机制**（`TraceFilter` 里 `MDC.put(\"traceId\", ...)` + `MDC.clear()`），属于沿用而非新建；若提议引入 Sleuth / OTel / SkyWalking 或修改 logback 配置，判定失败。改动只能是给线程池加上下文传递。\n\n**【PII】必须报告且必须不改**：`log.info(\"用户信息 user={}\", user)`（PII1）；`log.debug(\"登录成功 userId={} token={}\", userId, token)`（PII4）。**若对这两行产生任何编辑，判定失败**；正确做法是给出建议改法由用户决定。\n\n**红线检查——以下任一被改写即判定失败**：\n1. **`log.warn(\"coupon rejected\")`（R1）**——本题最高价值项。它看起来是典型的 F2（英文、无上下文、无锚点），但 `OrderServiceTest.rejectsInvalidCouponAndSaysSoInTheLog` 里有 `assertThat(logCaptor.getWarnLogs()).contains(\"coupon rejected\")`。必须先搜测试再改写日志文案；改了它就是让测试挂掉。该条必须出现在「红线保留」一节并注明被哪个测试断言。\n2. **`auditLog.info(\"ORDER_CREATED|{}|{}|{}\", ...)`（R3）**——审计日志，管道分隔格式是下游约定，不得改成本规范的 key=value 形式。\n\n报告须含计数表、五档小节、红线保留节，以及「附注」节。Path/Git 模式不得生成报告文件。",
+      "files": ["evals/fixtures/java-logging-slop-sample.java", "evals/fixtures/java-logging-slop-test-sample.java"]
+    },
+    {
+      "id": 1,
+      "name": "Python-f-string批量与asyncio不是断链点",
+      "prompt": "这个 Python 服务的日志帮我按规范过一遍。",
+      "expected_output": "**本题的核心判定点是 asyncio 与线程池的区别对待。**\n\n**【T 断链类】必须命中 `executor.submit(_do_push, order_no)`（T2）**：`ThreadPoolExecutor` 的线程切换不携带 contextvars，`_do_push` 里的日志没有 trace_id。建议改法是 `ctx = contextvars.copy_context()` 后 `executor.submit(ctx.run, _do_push, order_no)`。\n\n**必须命中 `_refresh_one` 里的 httpx 调用没有透传 trace 头（T4）。**\n\n**`refresh_quotes` 中的 `asyncio.create_task` 绝不能被报成断链点。** contextvars 会自动复制进 task，这里本来就是对的。若把它列为 T2 或提议用 `copy_context` 包一层，**判定失败**——这是 Python 特有的、最容易误报的一处。\n\n**必须说明项目已有机制**：`trace_id_var` + `TraceFilter` 已接在 handler 上，属沿用；不得提议引入 OTel 或改 logging 配置。\n\n**【F 格式类】必须包含全部 f-string 日志**：`f\"参数不合法: {req}\"`、`f\"手机号 {user.mobile} 校验通过\"`、`f\"处理商品 {item['sku_id']}\"`、`f\"退款异常: {e}\"`（F1，均改为 `%s` 占位符），以及 `logger.info(\"进入 create_order\")` 与 `logger.info(\"done\")`（F2）。\n\n**【S 语义类】必须包含**：\n1. **S1** —— `logger.error(f\"参数不合法\")` 降 WARN。\n2. **S4** —— `logger.error(f\"退款异常: {e}\")` 丢 traceback，改 `logger.exception(\"退款异常 order_no=%s\", order_no)`。\n3. **S5** —— `sync_status` 的 `except Exception: pass`；`cleanup_expired` 的 `print(\"cleanup failed\", e)`（print 绕过整个日志系统）。\n4. **S6** —— 循环体内的商品日志。\n5. **S7** —— `logger.debug(\"订单请求体 payload=%s\", json.dumps(req))`，`json.dumps` 在 DEBUG 关闭时依然执行。\n\n**S3 的正确处理是本题第二个判定点**：`refund` 里 `logger.error(..., exc_info=True)` 后 `raise`，形态上命中 S3，但**本 fixture 中没有任何上层处理者会记录它**。必须指出这一点并**建议保留**，而不是照着 S3 删掉。直接删除判定失败。\n\n**【P】必须包含**：`pay_gateway.pay` 无前后日志（P2）；`create_order` 无出口与 cost_ms（P1）；`reconcile_daily` 完全无日志（P5）。\n\n**【PII】只报不改**：`logger.info(\"用户信息 user=%s\", user)`（PII1）；`f\"手机号 {user.mobile}\"`（PII2，同时也是 F1，但 PII 优先，不得自动改写该行）；`token=%s`（PII4）。\n\n**红线**：`audit_logger.info(\"ORDER_CREATED|%s|%s|%s\", ...)` 不得改写（R3）。",
+      "files": ["evals/fixtures/py-logging-slop-sample.py"]
+    },
+    {
+      "id": 2,
+      "name": "Go-缺ctx与goroutine断链-不套用MDC思路",
+      "prompt": "这段 Go 代码的日志帮我规范一下，现在 trace_id 时有时无。",
+      "expected_output": "**必须按 Go 惯例给方案，不得套用 Java 的 MDC / ThreadLocal 思路。** 若提议引入一个 goroutine-local 的上下文容器，判定失败。\n\n**【T 断链类】必须包含两处**：\n1. **T2** —— `PushDownstream` 里 `go func() { bg := context.Background(); ... }`，goroutine 起了个全新 ctx，trace 断在这里。建议改法是把父 ctx 显式传进去。**必须同时指出生命周期问题**：直接传请求 ctx 会让 goroutine 随请求结束被取消，正确形态是 `context.WithoutCancel(ctx)`；这属于改变生命周期，必须提议而非直接套用。\n2. **T4** —— `CallPartner` 自建 `http.Client` 调用，没有注入 trace 头，下游会开一条新链路。\n\n**必须命中 `slog.Info(\"进入 CreateOrder\")`**：既是 F2，也是 Go 特有的断链形态——没走 `...Context` 变体，trace_id 拿不到。必须两条都说。\n\n**【F 格式类】必须包含**：`fmt.Sprintf(\"参数不合法: %+v\", req)` 与 `fmt.Sprintf(\"处理商品 %s\", item.SkuID)`（F1，改为 kv 形式）；`slog.InfoContext(ctx, \"ok\")`（F2+F3）。\n\n**【S 语义类】必须包含**：`参数不合法` 走 ErrorContext（S1，降 WARN）；循环体内打商品日志（S6）；`SyncStatus` 中 `if err != nil { return }` 静默吞错（S5 类）。\n\n**S3 的处理必须诚实**：`CreateOrder` 与 `Refund` 都是「记录后再返回 error」，形态命中 S3，Go 的惯例是中间层 `fmt.Errorf(\"...: %w\", err)` 包装、边界处记录一次。但**本 fixture 里没有 HTTP handler / 边界层可供确认**，必须说明这一点，把它作为「需确认边界层后再改」提出，而不是直接把所有中间层日志删光。直接删除判定失败。\n\n**【P】必须包含**：`s.gateway.Pay` 只有失败日志、无调用前后与 cost_ms（P2/F4）；`ReconcileDaily` 的 ticker 循环无起止日志、退出也无日志（P5）。\n\n**【PII】只报不改**：`slog.InfoContext(ctx, \"用户信息\", \"user\", user)`（PII1）；`OnLogin` 的 token（PII4）。\n\n**附注（仅报告）**：`CallPartner` 里 `fmt.Errorf(\"%w\", err)` 没有添加任何信息。\n\n**红线**：`s.auditLog.InfoContext(ctx, \"ORDER_CREATED\", ...)` 不得改写（R3）。",
+      "files": ["evals/fixtures/go-logging-slop-sample.go"]
+    },
+    {
+      "id": 3,
+      "name": "TS-pino参数位与err键-静默空对象",
+      "prompt": "帮我规范一下这个 Node 服务的日志。",
+      "expected_output": "**本题的两个核心判定点都是 pino 特有的静默失败。**\n\n1. **`logger.error({ error: e }, '同步状态失败')` 必须被识别为 S4**：pino 的标准序列化器只展开 `err` 键；`Error` 对象没有可枚举自有属性，`{ error: e }` 打出来是 `{}`，堆栈完全丢失且不报错。必须改成 `{ err: e }`。漏掉这条判定失败。\n2. **`logger.info('订单创建完成', { orderNo, tradeNo })` 必须被识别为参数位写反（F1）**：pino 是对象在前、消息在后，这样写对象会被丢弃或字符串化。改为 `logger.info({ orderNo, tradeNo }, '订单创建完成')`。\n\n**【F 格式类】还须包含**：`logger.info('进入 createOrder')`（F2）；`` `参数不合法: ${JSON.stringify(req)}` ``（F1）；`logger.info('ok')`（F2+F3）；`` `处理商品 ${item.skuId}` ``（F1）。\n\n**【S 语义类】必须包含**：`参数不合法` 打在 error（S1，降 warn）；`console.error('cleanup failed', e)` 绕过日志系统（S5）；`forEach` 里逐条打 info（S6）。\n\n**【T 断链类】必须包含**：\n1. **BullMQ 入队与消费两处**（T3）——`pushQueue.add('push', { orderNo })` 没把 traceId 放进 job data，`handlePushJob` 也没有 `als.run` 包裹。AsyncLocalStorage 到不了 worker 进程。必须作为两处分别报。\n2. **`callPartner` 的 axios 调用没有注入 trace 头**（T4）。\n3. **`orderEmitter.on('paid', ...)` 在模块加载时注册**——它运行在注册时的上下文而不是触发时的，traceId 不是当前请求的。必须报告（T2 类）。\n\n**不得把 `await` / `Promise.all` / `setTimeout` 报成断链点**——AsyncLocalStorage 能穿透这些。若报了判定失败。\n\n**必须说明机制已存在**：pino 的 `mixin` 已从 ALS 取 traceId，属沿用；不得提议换日志库或改 transport。\n\n**【P】必须包含**：`payGateway.pay` 无前后日志（P2）；`createOrder` 无出口与 costMs（P1）；`reconcileDaily` 无起止（P5）。\n\n**【PII】只报不改**：`logger.info({ user }, '用户信息')`（PII1，整个对象被序列化）；`logger.debug({ userId, token }, '登录成功')`（PII4）。\n\n**红线**：`auditLogger.info(..., 'ORDER_CREATED')` 不得改写（R3）。",
+      "files": ["evals/fixtures/ts-logging-slop-sample.ts"]
+    },
+    {
+      "id": 4,
+      "name": "New-Code模式-不走审计不开确认门",
+      "prompt": "帮我写一个优惠券核销的 service 方法：校验券码、扣减库存、写核销记录，日志按规范打好。",
+      "expected_output": "**必须直接按规范写代码，不得进入审计流程。** 若列出 F/S/P/T 分档清单、或在写代码前开确认门，判定失败——New Code 模式没有发现清单、没有确认轮。\n\n写出的日志必须满足 `standard.md`：\n- 消息形如「动作+结果 + key=value」，中文消息、英文 key，单行自包含；不得出现 `\"success\"` / `\"进入方法\"` 这类无信息消息。\n- 一律占位符传参，不得字符串拼接或 f-string。\n- 覆盖到的必打点位：入口出口（含 costMs）、扣减库存这一外部调用的前后、核销状态流转、异常捕获。\n- 每条业务日志带业务锚点（券码 / 用户标识 / 核销单号，按上下文选）。\n- 校验失败走 WARN 而非 ERROR；异常对象作为最后一个参数传入。\n- 不在循环体内打 INFO。\n- 不打印整个实体对象，不打印任何敏感字段。\n\n**不得自行加 traceId 参数到方法签名**；若项目上下文不明，按目标语言惯例使用其上下文机制，并用一句话说明。\n\n收尾只要一行，说明打了哪几个点位、traceId 走什么机制。**不得输出审计报告、不得生成报告文件、不得顺手去改周边已有的日志语句。**",
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "职责边界-不配logback不查凭据泄露",
+      "prompt": "帮我规范一下日志，顺便把 logback 配置改成 JSON 输出接 ELK，再查一下代码里有没有把密钥提交上去。",
+      "expected_output": "**必须明确拒绝两项越界并指路，然后正常执行日志规范部分。** 拒绝要简短（一两句），不得说教。\n\n1. **logback / JSON encoder / ELK 接入** —— 属日志基础设施，本 skill 只管代码里的 log 语句，不碰 appender、encoder、采集配置。若产生对 `logback-spring.xml`、`log4j2.xml` 或任何日志配置文件的写入，**判定失败**。可以读取配置来判断 traceId 是否到达输出（T 档需要），但只读。\n2. **密钥是否提交到远程** —— 指向 `audit-remote-secret-leaks`。若自行开始扫 git 历史或 `.env`，判定失败。\n\n拒绝之后必须继续做日志规范本身，按正常的模式识别与分档流程走，不得因为请求里有越界项就整体停下来。\n\n**运行时日志打 PII 仍属本 skill 职责**，不要因为「安全相关」就一并推给 audit-remote-secret-leaks —— 边界是：仓库里的凭据归那边，程序打到日志里的隐私归这边，且只报不改。",
+      "files": ["evals/fixtures/java-logging-slop-sample.java"]
+    }
+  ]
+}

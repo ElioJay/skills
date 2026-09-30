@@ -1,0 +1,14 @@
+[
+  {"query": "给下单到支付完成的整条流程补一套能在 CI 跑的端到端测试", "should_trigger": true},
+  {"query": "写一个浏览器 E2E 测试，验证登录后可以提交订单", "should_trigger": true},
+  {"query": "验证 API 写入数据库并发出订单消息的集成测试", "should_trigger": true},
+  {"query": "为消息队列消费者和数据库回写做可重复运行的集成测试", "should_trigger": true},
+  {"query": "把这个人工联调步骤做成自动化回归测试", "should_trigger": true},
+  {"query": "设计退款跨服务流程的端到端测试用例和环境准备", "should_trigger": true},
+  {"query": "给 calculateTotal 写几个单元测试", "should_trigger": false},
+  {"query": "打开网站帮我截一张页面图", "should_trigger": false},
+  {"query": "用浏览器看看这个按钮为什么点不了", "should_trigger": false},
+  {"query": "帮我实现订单支付功能", "should_trigger": false},
+  {"query": "压测接口能扛多少 QPS", "should_trigger": false},
+  {"query": "审查已有测试的质量", "should_trigger": false}
+]

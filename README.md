@@ -117,6 +117,13 @@ git clone --depth 1 https://github.com/ElioJay/skills.git
 `systematic-debugging` 从现象、日志和失败测试入手，按时间线核对实际调用和状态，
 用复现或对照排除假设。用户只要求诊断时保持只读；要求修复时做最小改动，并报告回归验证及未验证部分。
 
+### 10. 推送这一步没有护栏
+
+`push-remote` 把"推错地方、推错内容、覆盖别人"三类不可逆后果挡在推送之前：先核对当前分支与 upstream、
+列出**这次真正会推上去的提交**、检查敏感文件，再执行并在推送后用 `git status -sb` 与 `git ls-remote`
+验证远程 ref 确实更新。默认禁止 `--force`，只允许 `--force-with-lease` 且需单独授权；
+被 `non-fast-forward` 拒绝时给出同步后重推的路径，而不是用强推抹掉别人的提交。
+
 ## Skill 参考
 
 以下技能均提供 Claude Code 与 Codex 两种宿主版本。
@@ -126,6 +133,12 @@ git clone --depth 1 https://github.com/ElioJay/skills.git
 | Skill | 宿主 | 用途 |
 |---|---|---|
 | [`audit-remote-secret-leaks`](./.claude/skills/audit-remote-secret-leaks/SKILL.md) | Claude + Codex | 审计 Git 历史、工作区、ignored 文件和 stash 中的敏感信息风险。 |
+
+### 协作与发布
+
+| Skill | 宿主 | 用途 |
+|---|---|---|
+| [`push-remote`](./.claude/skills/push-remote/SKILL.md) | Claude + Codex | 安全地把本地提交推到远程：核对分支与 upstream、确认待推送提交、识别强推风险并优先用 `--force-with-lease`、推送后验证远程 ref、失败时给出可恢复步骤。 |
 
 ### 自动化
 

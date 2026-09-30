@@ -1,0 +1,23 @@
+[
+  {"query": "我写代码的时候老是拿不准什么时候该用设计模式，帮我判断一下", "should_trigger": true},
+  {"query": "这段代码里 if-else / switch 一大堆，是不是该用什么设计模式", "should_trigger": true},
+  {"query": "我这有三四种支付方式要处理，要不要上策略模式", "should_trigger": true},
+  {"query": "创建这个对象的逻辑到处都是，用工厂模式合适吗", "should_trigger": true},
+  {"query": "我这个抽象层 / 一堆接口是不是过度设计了", "should_trigger": true},
+  {"query": "帮我看看这段代码哪里可以用设计模式、哪里又过度设计了", "should_trigger": true},
+  {"query": "这个场景该用策略模式还是状态模式", "should_trigger": true},
+  {"query": "我想给这个类加缓存和日志，又不想改它本身，该用哪个模式", "should_trigger": true},
+  {"query": "评审一下我这段代码的设计，模式用得合不合理、有没有为用而用", "should_trigger": true},
+  {"query": "should I use a factory here or is it over-engineering for two implementations?", "should_trigger": true},
+
+  {"query": "帮我设计一个用户提现的后端接口，字段、错误码、幂等都定一下", "should_trigger": false},
+  {"query": "review 一下我这段订单代码有没有 bug、性能和安全问题", "should_trigger": false},
+  {"query": "读一下 OrderService.createOrder 这个方法的调用链和数据流", "should_trigger": false},
+  {"query": "给这个 OrderController 加上详细注释", "should_trigger": false},
+  {"query": "我这段代码线上偶发空指针，帮我排查根因怎么修", "should_trigger": false},
+  {"query": "把这个导出功能端到端实现了，能跑的那种", "should_trigger": false},
+  {"query": "给我讲讲什么是单例模式", "should_trigger": false},
+  {"query": "这个项目整体是什么架构、由哪些模块组成，给我通读一遍", "should_trigger": false},
+  {"query": "帮我设计一下订单表的字段和索引", "should_trigger": false},
+  {"query": "帮我把这个 React 页面的按钮样式改一下", "should_trigger": false}
+]

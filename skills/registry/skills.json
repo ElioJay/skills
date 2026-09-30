@@ -1,0 +1,424 @@
+{
+  "$schema": "./skills.schema.md",
+  "registryVersion": 1,
+  "updatedAt": "2026-05-24",
+  "conventions": {
+    "sourceDir": "宿主中立技能的单一真源：skills/skills/<name>/。改动只改源，再跑 scripts/sync-skills.ps1 同步到 .claude/skills 与 .codex/skills。",
+    "hostSpecific": "标记为 true 的技能，其正文按宿主不同（.claude 版写 Claude Code / AskUserQuestion，.codex 版写 Codex / request_user_input），因此不设单一真源，只做逐宿主契约校验；这类技能只存在于镜像目录。",
+    "maturity": "stub=仅有 SKILL.md 骨架、无 references/assets；beta=有 references 或资产但无 eval 覆盖；stable=SKILL.md + 支撑文件 + evals 齐备。",
+    "descriptionRange": "description 字符数允许区间（40-1200），CI 按此校验。",
+    "lifecycle": "对应 .docs 软件研发生命周期的二级活动目录编号（如 41 = 41-代码编写），多阶段用数组。"
+  },
+  "hosts": {
+    "claude-code": ".claude/skills",
+    "codex": ".codex/skills"
+  },
+  "skills": [
+    {
+      "name": "code-read-deep-function",
+      "summary": "从单个方法入口只读地追调用链与数据流，产出方法级中文阅读报告与两张 Mermaid 图。",
+      "lifecycle": [
+        "41"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "notes": "code-read-deep-* 家族按容器粒度分工：方法 / 文件 / 模块 / 项目，另加横切线索 trace 与单次变更 change。",
+      "hostSpecific": true
+    },
+    {
+      "name": "code-read-deep-file",
+      "summary": "通读单个源文件，输出文件级结构、职责、依赖与消费方地图，附结构图与依赖图。",
+      "lifecycle": [
+        "41"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "hostSpecific": true
+    },
+    {
+      "name": "code-read-deep-module",
+      "summary": "通读单个模块或包子树，输出分层、内部依赖健康（含环检测）与上下文关系图。",
+      "lifecycle": [
+        "41",
+        "31"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "hostSpecific": true
+    },
+    {
+      "name": "code-read-deep-project",
+      "summary": "通读整个项目，建立技术栈、容器模块、依赖与关键端到端路径全景，输出 C4 系列图。",
+      "lifecycle": [
+        "41",
+        "31"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "hostSpecific": true
+    },
+    {
+      "name": "code-read-deep-trace",
+      "summary": "沿一条横切线索（业务能力、关注点、字段）跨文件跨模块追踪数据流与控制流。",
+      "lifecycle": [
+        "41",
+        "31"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "hostSpecific": true
+    },
+    {
+      "name": "code-read-deep-change",
+      "summary": "读懂一次 diff / commit / PR 的意图与影响半径，输出变更阅读报告与影响半径图。",
+      "lifecycle": [
+        "41",
+        "43"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "hostSpecific": true
+    },
+    {
+      "name": "code-vibe-workflow",
+      "summary": "推进需求到提交的六阶段开发闭环：需求、计划、编码、测试、评审、提交。",
+      "lifecycle": [
+        "41",
+        "42",
+        "43",
+        "44"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json",
+      "notes": "缺 evals/trigger-eval.json，与 .claude/CLAUDE.md 的约定不符，待补。"
+    },
+    {
+      "name": "behavior-preserving-refactor",
+      "summary": "在保持可观察行为的前提下重构：先锁定契约与测试基线，再做局部提取或搬移。",
+      "lifecycle": [
+        "41"
+      ],
+      "maturity": "stub",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "notes": "第 3 批升级对象：24 行 SKILL.md、无 references/assets，description 仅 202 字符。"
+    },
+    {
+      "name": "code-annotating",
+      "summary": "为非显而易见的意图、约束与取舍补注释，编辑前先确认范围、详略与语言。",
+      "lifecycle": [
+        "41"
+      ],
+      "maturity": "beta",
+      "evals": "missing",
+      "notes": "缺 evals 目录；description 未写明不适用边界。"
+    },
+    {
+      "name": "code-slimming",
+      "summary": "只做减法：删死代码、内联一次性 wrapper、拆单一实现接口，先列清单再动手。",
+      "lifecycle": [
+        "41"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json"
+    },
+    {
+      "name": "code-logging",
+      "summary": "规范代码中的日志语句：消息自包含、级别正确、关键路径打点、traceId 不断链。",
+      "lifecycle": [
+        "41",
+        "70"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json"
+    },
+    {
+      "name": "design-pattern-advisor",
+      "summary": "先过 YAGNI 闸门判断是否需要设计模式，再给最小实现或拆模式建议。",
+      "lifecycle": [
+        "32",
+        "36"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "notes": "缺陷：description 中引用了本仓不存在的 skill 名 `api-create-rule`，应改为 api-contract-design。"
+    },
+    {
+      "name": "api-contract-design",
+      "summary": "在实现前设计或修订接口契约：字段、错误语义、示例与兼容迁移顺序。",
+      "lifecycle": [
+        "34"
+      ],
+      "maturity": "stub",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "notes": "第 3 批升级对象：24 行 SKILL.md、无 references/assets。"
+    },
+    {
+      "name": "code-testing",
+      "summary": "先设计用例清单再写单元测试或用例文档，预期依据来自需求而非实现。",
+      "lifecycle": [
+        "42",
+        "51"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json"
+    },
+    {
+      "name": "integration-e2e-testing",
+      "summary": "编写可重复运行的跨组件与浏览器流程测试，含条件等待、数据隔离与副作用边界。",
+      "lifecycle": [
+        "52",
+        "53"
+      ],
+      "maturity": "stub",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "notes": "第 3 批升级对象：24 行 SKILL.md、无 references/assets。"
+    },
+    {
+      "name": "database-migration",
+      "summary": "设计与验证库表及存量数据迁移：分阶段结构变更、回填、兼容发布与恢复路径。",
+      "lifecycle": [
+        "64",
+        "35"
+      ],
+      "maturity": "stub",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "notes": "第 3 批升级对象：24 行 SKILL.md、无 references/assets。"
+    },
+    {
+      "name": "systematic-debugging",
+      "summary": "从现象、日志与失败测试验证单个故障的根因，按需完成最小修复与回归证据。",
+      "lifecycle": [
+        "72",
+        "73"
+      ],
+      "maturity": "beta",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "notes": "34 行 SKILL.md、无 references；与即将新增的 incident-response 分工：本技能管根因定位，它管现场分级与止血。"
+    },
+    {
+      "name": "performance-investigation",
+      "summary": "用同口径基线、剖析与复测定位并验证性能瓶颈，不接受不可比的对比数据。",
+      "lifecycle": [
+        "74",
+        "54"
+      ],
+      "maturity": "stub",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "notes": "第 3 批升级对象：24 行 SKILL.md、无 references/assets。"
+    },
+    {
+      "name": "code-review-deep",
+      "summary": "十维度并行深度代码审查（英文输出），7 个审查代理，自动识别语言与框架。",
+      "lifecycle": [
+        "43"
+      ],
+      "maturity": "beta",
+      "evals": "missing",
+      "notes": "与 code-review-deep-zh 语义同构，references 为两份手工维护的副本；缺 evals；README 未登记。"
+    },
+    {
+      "name": "code-review-deep-zh",
+      "summary": "十维度并行深度中文代码审查，支持聚焦模式与大 diff 分片。",
+      "lifecycle": [
+        "43"
+      ],
+      "maturity": "beta",
+      "evals": "missing",
+      "notes": "与 code-review-deep 语义同构；缺 evals。"
+    },
+    {
+      "name": "codebase-diagrams",
+      "summary": "为真实代码库产出成套可维护的 Mermaid 图集，按项目类型与粒度自图谱清单选取。",
+      "lifecycle": [
+        "32",
+        "33",
+        "37",
+        "31"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json"
+    },
+    {
+      "name": "audit-remote-secret-leaks",
+      "summary": "审计 Git 远程历史、工作区、ignored 文件与 stash 中的敏感信息泄露风险，证据需脱敏。",
+      "lifecycle": [
+        "62",
+        "45"
+      ],
+      "maturity": "beta",
+      "evals": "missing",
+      "tests": "tests/check-audit-remote-secret-leaks-skill.ps1",
+      "notes": "有独立契约测试 tests/check-audit-remote-secret-leaks-skill.ps1；缺 evals 目录。"
+    },
+    {
+      "name": "push-remote",
+      "summary": "把本地提交安全地推送到远程仓库：核对分支与 upstream、确认待推送提交、识别强推风险并优先用 --force-with-lease、推送后验证远程 ref、失败时给出可恢复步骤。",
+      "lifecycle": [
+        "44",
+        "61"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "tests": "tests/check-push-remote-skill.ps1",
+      "notes": "与 audit-remote-secret-leaks 分工：推送前只提醒泄露审计，不下审计结论；与 /commit 分工：本技能不创建提交。"
+    },
+    {
+      "name": "automation-playwright",
+      "summary": "通过终端用 playwright-cli 驱动真实浏览器：表单操作、截图、数据提取与 UI 流程排查。",
+      "lifecycle": [
+        "52",
+        "53"
+      ],
+      "maturity": "beta",
+      "evals": "missing"
+    },
+    {
+      "name": "naturalize-zh",
+      "summary": "去除中文文本的 AI 腔，只删不增：不写入原文没有的事实、数字与来源。",
+      "lifecycle": [
+        "00"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json + fixtures",
+      "notes": "缺陷：description 中引用了本仓不存在的 skill 名 `interviewer-doc-review`。",
+      "hostSpecific": true
+    },
+    {
+      "name": "skill-creator-guide",
+      "summary": "通过对话引导用户创建新的 Claude Code skill：先定级别与用途，再生成草稿。",
+      "lifecycle": [
+        "00"
+      ],
+      "maturity": "beta",
+      "evals": "missing",
+      "hostSpecific": true,
+      "notes": "与宿主内置 skill-creator 近义重名，存在路由冲突与安装覆盖风险；缺 evals；SKILL.md 文本按宿主定制（.codex 版写 Codex），故不进真源。"
+    }
+  ],
+  "planned": [
+    {
+      "name": "release-readiness",
+      "summary": "发布前准出检查：版本冻结、构建与配置差异、升级脚本顺序、灰度观测、回滚触发条件与演练。",
+      "lifecycle": [
+        "61",
+        "62",
+        "63",
+        "64",
+        "65",
+        "66"
+      ],
+      "source": "技能建设差距分析.md 第 1 批 P0",
+      "notes": "补发布阶段 0 覆盖；尚未实现。"
+    },
+    {
+      "name": "incident-response",
+      "summary": "线上问题现场处置：严重度分级、先止血、时间线与影响面、复盘与防复发项。",
+      "lifecycle": [
+        "72"
+      ],
+      "source": "技能建设差距分析.md 第 1 批 P0",
+      "notes": "与 systematic-debugging 分工：本技能管现场与止血，它管根因定位；尚未实现。"
+    },
+    {
+      "name": "observability-setup",
+      "summary": "为关键路径设计可观测性：指标日志追踪、SLO 与阈值口径、告警降噪与排查手册。",
+      "lifecycle": [
+        "71"
+      ],
+      "source": "技能建设差距分析.md 第 1 批 P0",
+      "notes": "尚未实现。"
+    },
+    {
+      "name": "defect-fix-loop",
+      "summary": "缺陷修复闭环：分级与范围锁定、先失败测试后修复、回归范围推导与关闭条件。",
+      "lifecycle": [
+        "73",
+        "55"
+      ],
+      "source": "技能建设差距分析.md 第 1 批 P0",
+      "notes": "尚未实现。"
+    },
+    {
+      "name": "requirements-spec",
+      "summary": "从调研与口头需求产出可测的需求规格：验收标准、非功能需求、评审门、基线化与变更单。",
+      "lifecycle": [
+        "21",
+        "22",
+        "23",
+        "24",
+        "25",
+        "26"
+      ],
+      "source": "技能建设差距分析.md 第 2 批 P1",
+      "notes": "补需求阶段 0 覆盖；尚未实现。"
+    },
+    {
+      "name": "architecture-decision",
+      "summary": "现状分析到架构决策：架构与部署视图、选型对比与 ADR、模块划分、分阶段实施与设计评审。",
+      "lifecycle": [
+        "31",
+        "32",
+        "33",
+        "39"
+      ],
+      "source": "技能建设差距分析.md 第 2 批 P1",
+      "notes": "尚未实现。"
+    },
+    {
+      "name": "data-modeling",
+      "summary": "从需求与领域模型推导库表设计：约束、索引与容量估算、敏感字段、演进策略。",
+      "lifecycle": [
+        "35"
+      ],
+      "source": "技能建设差距分析.md 第 2 批 P1",
+      "notes": "与 database-migration 接力：本技能管设计，它管迁移；尚未实现。"
+    },
+    {
+      "name": "static-analysis",
+      "summary": "按技术栈接入静态检查：lint 与类型检查、依赖与漏洞扫描、规则基线与 CI 门禁。",
+      "lifecycle": [
+        "45",
+        "44"
+      ],
+      "source": "技能建设差距分析.md 第 2 批 P1",
+      "notes": "尚未实现。"
+    },
+    {
+      "name": "test-strategy",
+      "summary": "测试计划与分层策略：系统测试场景、验收标准双向追溯、测试数据与环境、准出标准。",
+      "lifecycle": [
+        "51",
+        "53",
+        "56"
+      ],
+      "source": "技能建设差距分析.md 第 2 批 P1",
+      "notes": "与 code-testing（单测）、integration-e2e-testing（跨组件）分层；尚未实现。"
+    },
+    {
+      "name": "decommission-archive",
+      "summary": "系统退役：数据迁移归档、下线方案、依赖方通知、资料归档与可追溯。",
+      "lifecycle": [
+        "81",
+        "82",
+        "83"
+      ],
+      "source": "技能建设差距分析.md 第 4 批 P2",
+      "notes": "补退役阶段 0 覆盖；尚未实现。"
+    },
+    {
+      "name": "ai-model-evaluation",
+      "summary": "AI 系统过程：模型指标与偏差鲁棒性评估、数据来源与质量、漂移监控、影响评估与透明信息。",
+      "lifecycle": [
+        "91",
+        "92",
+        "93",
+        "94",
+        "95",
+        "96",
+        "97"
+      ],
+      "source": "技能建设差距分析.md 第 4 批 P2",
+      "notes": "补 90-AI系统 组 0 覆盖；按项目需求触发；尚未实现。"
+    }
+  ]
+}

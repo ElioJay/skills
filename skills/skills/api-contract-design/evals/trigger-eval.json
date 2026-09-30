@@ -1,0 +1,14 @@
+[
+  {"query": "设计一个订单创建接口，先把字段和错误码定下来", "should_trigger": true},
+  {"query": "已有 /users 接口要新增字段，帮我评估兼容性并更新 OpenAPI", "should_trigger": true},
+  {"query": "前后端联调前把分页和空值语义约定清楚", "should_trigger": true},
+  {"query": "给支付服务设计退款 RPC 的请求、响应和错误契约", "should_trigger": true},
+  {"query": "订单已支付事件要给下游消费，消息字段和版本怎么定", "should_trigger": true},
+  {"query": "修改接口返回枚举值会不会影响老客户端？给迁移方案", "should_trigger": true},
+  {"query": "按现有 OpenAPI 实现这个订单查询端点", "should_trigger": false},
+  {"query": "帮我给 UserController 写单元测试", "should_trigger": false},
+  {"query": "这里要不要用工厂模式创建 DTO", "should_trigger": false},
+  {"query": "为什么这个接口返回 500？帮我排查", "should_trigger": false},
+  {"query": "全面审查这次 PR 有没有安全漏洞", "should_trigger": false},
+  {"query": "解释已有接口的代码调用链", "should_trigger": false}
+]

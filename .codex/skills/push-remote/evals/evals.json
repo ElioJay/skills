@@ -1,0 +1,23 @@
+{
+  "skill_name": "push-remote",
+  "evals": [
+    {
+      "id": 0,
+      "name": "远程有新提交时被拒",
+      "prompt": "帮我把改动推到远程。我本地有 2 个提交，但刚才 push 被拒了，报 non-fast-forward。",
+      "expected_output": "先 git fetch 并区分双方提交（git log --left-right HEAD...origin/<branch>），说明远程有本地没有的提交；给出 pull --rebase 或 merge 后重推的路径，冲突时报告冲突文件交用户裁决；明确不使用 --force 绕过；区分‘仅本地提交’与‘已推送’两种状态。"
+    },
+    {
+      "id": 1,
+      "name": "多个 remote 与分支范围未确定",
+      "prompt": "推一下。",
+      "expected_output": "先读现场（git status -sb、git remote -v）确认当前分支、upstream 与领先提交，列出这次会推上去的提交清单；存在多个 remote 或需新建分支/建立 upstream 时先确认目标，不自行选择；执行后验证远程 ref 并对齐本地 HEAD。"
+    },
+    {
+      "id": 2,
+      "name": "rebase 后的强推授权",
+      "prompt": "我 rebase 过了，现在推不上去，直接 force 吧。",
+      "expected_output": "不直接使用 --force；先确认远程 ref 当前 SHA 是否为本人上次推送结果，改用 --force-with-lease；说明强推会覆盖远程状态的后果，把该动作作为需用户明确授权的项；共享主干分支或远程已被他人更新时拒绝强推并说明替代路径。"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 ---
 name: skill-creator-guide
-description: 通过对话式引导用户创建新的 Claude Code skill，先确认 skill 级别和主要用途，再生成 skill 草稿
+description: 通过对话式引导用户创建新的技能，先确认技能级别和主要用途，再生成技能草稿。不要用于：改造或优化已有技能（用 skill-creator）、评测技能触发与产出质量、或编写与技能无关的普通代码文档。
 ---
 
 # Skill Creator Guide

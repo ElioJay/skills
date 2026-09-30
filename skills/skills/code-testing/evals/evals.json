@@ -1,0 +1,75 @@
+{
+  "skill_name": "code-testing",
+  "evals": [
+    {
+      "id": 0,
+      "name": "Java-按意图写预期-两处疑似缺陷先裁决",
+      "prompt": "给 OrderService.createOrder 写单元测试。",
+      "expected_output": "**必须先出标准版用例清单并发起确认；确认之前写入任何测试文件、或修改 OrderService，都判定失败。**\n\n清单列必须是：编号、维度、场景、输入/前置、预期、依据、优先级；依据列逐条填写（注释 / 推断 / 待确认 等），不得留空。\n\n**【⚠ 疑似缺陷】必须命中下面两处，逐条给出双方证据，并请用户裁决（按意图写 / 按实现写 / 删除）：**\n1. **买光库存**——类注释第 3 条写“购买数量等于剩余库存时允许下单”，实现是 `if (stock <= cmd.quantity())` 就抛 StockException，必须指出这一行。把这条用例的预期写成“抛 StockException”（照抄实现），判定失败。\n2. **重复提交**——类注释第 4 条写“同一 requestId 重复提交时返回第一次生成的订单号”，实现从未调用 `orderRepository.findByRequestId`。漏掉这一处判定失败。\n\n**【设计维度】必须覆盖：**\n- 边界：数量 1 与 99 合法，0 与 100 非法（两个非法值合并成一条参数化用例）；库存等于购买数量（即上面的 ⚠）、库存比购买数量少 1。\n- 异常：库存不足时除了断言 StockException，还必须断言没有扣库存、没有保存订单；支付失败时必须同时断言状态为 PAY_FAILED 和库存被加回。只断言异常类型的，判为不达标。\n- 组合：会员等级 >= 2 打 9 折，至少覆盖等级 1 和等级 2 两侧；金额用 `isEqualByComparingTo` 或等价写法比较。\n- 并发：库存扣减是共享状态，必须触发该维度——除重复提交用例外，对“并发抢最后一件库存”要么给用例，要么列入刻意不测并说明理由（单元层验证不了行锁）。\n- 其余没有用例的维度必须写明“不适用”或“刻意不测”的理由。\n\n**【只 mock 边界】** OrderRepository、StockRepository、PaymentGateway 用 mock；**PriceCalculator 必须用真实对象，mock 它判定失败**；时间用 `Clock.fixed`。订单号由 `UUID.randomUUID()` 直接生成：不得断言具体 UUID 值，应断言返回值与保存的订单号一致；可以把它记为可测性问题并建议注入 id 生成器，但不得修改生产代码。\n\n**【规范】** 项目没有这个类的测试，按内置规范：英文 `method_scene_expected` 方法名 + `@DisplayName` 中文描述，given / when / then 三段；落地位置为 `src/test/java/com/example/order/OrderServiceTest.java`。\n\n可以在附注里建议把 `<=` 改成 `<`，但不得直接修改。",
+      "files": ["evals/fixtures/java-order-service-sample.java"]
+    },
+    {
+      "id": 1,
+      "name": "Python-git改动-过时测试与已有覆盖-满100边界",
+      "prompt": "我刚改了计价规则：会员订单满 100 元免运费、也不再打折，不满 100 元的会员折扣从 9 折改成 95 折。diff 和现有测试都在这，帮我给这次改动补测试。",
+      "expected_output": "**范围只限这次改动**：`member_discount_rate`、`shipping_fee`，以及受它们影响的 `total`。`format_price` 没有改动，**为它新增任何用例都判定失败**。\n\n**确认之前不得写入任何文件，也不得修改 pricing.py。**\n\n**【⚠ 疑似缺陷】必须命中**：用户描述的规则和 `shipping_fee` 的 docstring 都是“满 100 元免运费”，实现却是 `subtotal > FREE_SHIPPING_THRESHOLD`，小计恰好 100 时仍收 8 元运费。必须引用这一行，并指出 `total(True, Decimal(\"100\"))` 的预期同样受影响（按意图是 100.00，实现得到 108.00）。按实现把预期写成 108.00，判定失败。\n\n**【需更新的现有测试】必须单列，并写明原因与改法：**\n- `test_member_gets_ten_percent_off`：断言 0.9，新规则下不满 100 元为 0.95。\n- `test_total_for_member`：`total(True, Decimal(\"50\"))` 由 53.00 变为 55.50。\n\n**【已有覆盖】必须列出，且不得重写**：`test_non_member_no_discount`；`test_shipping_fee_is_flat`（非会员 50 元运费仍是 8 元——可以指出名字已经不准确，但不得擅自改名）；`test_format_price`。\n\n**【边界与组合】** 必须围绕 100 设计 99.99 / 100 / 100.01，分别作用于折扣率和运费；另有“非会员小计超过 100 仍收运费”的组合用例。\n\n**【规范】** 项目已有测试：新用例必须追加到现有的 tests/test_pricing.py，沿用其 pytest 函数 + `test_<场景>` 英文命名风格；改成 `unittest.TestCase` 类或另建新测试文件，判定失败。金额一律 `Decimal` 对 `Decimal` 比较，不得与 float 比较。",
+      "files": ["evals/fixtures/py-pricing-change.diff", "evals/fixtures/py-pricing-sample.py", "evals/fixtures/py-pricing-existing-test.py"]
+    },
+    {
+      "id": 2,
+      "name": "Go-判定表与边界-不可测只报告不改",
+      "prompt": "给 coupon.go 写测试。",
+      "expected_output": "**确认之前不得写入任何文件，也不得修改 coupon.go。**\n\n**【组合】`Validate` 必须按判定表设计**：四个条件（过期、新人限制、最低消费、使用次数）各至少有一对“只差这一个条件、结果不同”的用例；另外至少一条“两个条件同时不满足”的用例，断言返回注释规定的**第一个**原因（例如既过期又未达门槛 → ErrExpired）。把 2^4 = 16 种组合全部枚举，判为不达标。\n\n**【边界】必须包含**：当前时间恰好等于 ExpiresAt（注释写到期时刻即视为已过期 → ErrExpired）与早 1 纳秒（可用）；订单金额恰好等于 MinSpend（可用）与少 1 分（ErrMinSpend）；usedCount 等于 UsageLimit-1（可用）与等于 UsageLimit（ErrUsageExhausted）。`Discount` 覆盖面额大于、等于、小于订单金额三种情况。\n\n**【可测性】** `Validate` 依赖包级变量 `nowFunc`：测试中替换它并用 `t.Cleanup` 恢复，这些测试不得调用 `t.Parallel()`。`IsWeekendPromo` 直接调用 `time.Now()`：**必须标为“不可测”，并给出建议的接缝（传入时间，或改用 nowFunc）**。为了测它去改 coupon.go、或引入 gomonkey 一类运行时打桩库，判定失败。\n\n**【规范】** 表驱动 + `t.Run` 中文子测试名；错误用 `errors.Is` 判断，不比较错误字符串；测试文件为同目录的 `coupon_test.go`，`package coupon`；go.mod 没有 testify，不得引入。",
+      "files": ["evals/fixtures/go-coupon-sample.go"]
+    },
+    {
+      "id": 3,
+      "name": "TS-OpenAPI-规格作依据-进程内接口测试",
+      "prompt": "按 openapi 文档给订单接口写接口测试。",
+      "expected_output": "**模式必须判对**：实现已经存在，这是“代码→测试代码”，OpenAPI 规格是最高优先级的预期依据；清单必须带“关联需求”列（取值如 `POST /orders`）。当成测试先行、提出建桩，判定失败。\n\n**确认之前不得写入任何文件，也不得修改 src/app.ts。**\n\n**【⚠ 疑似缺陷】必须命中两处，并给出规格与实现双方的证据：**\n1. 规格里 `quantity` 是 `minimum: 1`（实现自己的错误提示也写“1 到 99”），实现却是 `quantity < 0` 才拒绝，`quantity: 0` 会被接受。\n2. 规格规定 POST /orders 成功返回 `201` 并带 `Location` 头，实现返回 `200`、没有 Location。\n按实现写预期（0 合法、返回 200），判定失败。\n\n**【覆盖】** 每个文档化的状态码至少一条：POST 的 201、400，GET 的 200、404。400 需覆盖 skuId 缺失、skuId 为空串、quantity 缺失、0、100、非整数（如 1.5）——同一类的值可以参数化；quantity 为 1 与 99 时合法。响应体按 schema 断言（如 `status` 为 `CREATED`，错误体含 `code` 与 `message`）；只断言“返回的是 JSON”判为不达标。规格没有声明 security scheme：权限维度必须标“不适用：规格未定义鉴权”。\n\n**【方式】** 必须用 supertest 对 `createApp(fakeStore)` 返回的 app 发进程内请求，OrderStore 用内存 fake；**调用 `listen()` 或依赖一个已启动的服务，判定失败**。所有 supertest 请求和异步断言都必须 `await`。项目现有测试用 `describe` + 中文 `it`，新测试放 tests/ 下并沿用这一风格。",
+      "files": ["evals/fixtures/ts-orders-openapi.yaml", "evals/fixtures/ts-orders-app.ts"]
+    },
+    {
+      "id": 4,
+      "name": "PRD-出清单-关联需求-待确认不得脑补",
+      "prompt": "根据这份 PRD 出一份测试用例文档。项目里有 .docs 生命周期目录。",
+      "expected_output": "**模式：需求→用例文档。第一步必须是带“关联需求”列的标准版清单并发起确认；确认之前写入任何文档，判定失败。**\n\n**【覆盖】** 需求 3.1 到 3.6 每条至少对应一条用例；需求 4（P99 < 300ms）必须以“未覆盖：性能压测不在本 skill 范围”出现，不得为它编造功能用例。\n\n**【待确认——本题核心】** 3.3“超时未支付自动取消”没有写超时时长，必须列为待确认并提问。**自行假设一个时长（如 15 分钟或 30 分钟）直接写进预期、又不标待确认，判定失败。** 可以给出建议值，但必须明确标成待确认。\n\n**【维度】必须包含：**\n- 3.6 边界：0、1、99、100（0 和 100 被拒绝）。\n- 3.2 异常：除了提示“库存不足”，预期必须写明库存不变、不生成订单。\n- 刚好买光（购买数等于库存）：PRD 只写了“库存充足时成功”，必须作为用例列出，依据标“推断”或“待确认”。\n- 3.4 触发并发维度：必须有重复提交的用例；并发同时提交要么给用例，要么列入刻意不测并说明理由。\n- 3.5 触发权限维度：未登录下单。\n- 3.3 状态：超时后取消并释放库存；超时前完成支付则不被取消。\n- 不适用的维度（如数据量）写明理由。\n\n**【文档】** 确认轮里必须提出路径 `.docs/50-测试验证/51-测试设计/REQ-012-测试用例.md` 请用户确认，并询问是否同时生成 docx，默认只要 Markdown。\n\n提问必须通过交互式提问工具，推荐项放第一个。",
+      "files": ["evals/fixtures/prd-order-sample.md"]
+    },
+    {
+      "id": 5,
+      "name": "PRD-已确认清单-生成文档结构",
+      "prompt": "清单已经确认好了（见附件），直接按确认的清单生成用例文档。",
+      "expected_output": "**清单已经确认，不得再次发起清单确认，直接写文档。** 再发起一轮清单确认，判定失败。\n\n**【位置与格式】** 写入 `.docs/50-测试验证/51-测试设计/REQ-012-测试用例.md`，只写 Markdown；**确认清单写明“只要 Markdown”，额外生成 docx、xlsx 或其他格式，判定失败**。\n\n**【结构】必须依次包含：**\n1. 文件头：来源（PRD 路径）、模式、日期。\n2. 用例总表：TC-01 到 TC-10，编号、顺序、关联需求与确认清单**完全一致**；新增、删除或重新编号任何用例，判定失败。\n3. 用例详情：每条都有前置、编号步骤、与步骤一一对应的编号预期、测试数据；步骤必须是测试人员能直接执行的动作（如“以 11 件提交订单”），不得只重复场景名。\n4. 需求覆盖矩阵：3.1→TC-01、TC-02；3.2→TC-03；3.3→TC-04、TC-05；3.4→TC-06、TC-07；3.5→TC-08；3.6→TC-09、TC-10；需求 4 标“❌ 未覆盖：性能压测不在范围”。\n5. 刻意不测：沿用清单里的两条。\n\nTC-04 的预期必须使用已确认的 15 分钟；TC-02 的依据保留“推断（已确认）”。确认阶段没有遗留的待确认，“遗留问题”一节应删除。",
+      "files": ["evals/fixtures/prd-order-sample.md", "evals/fixtures/prd-order-confirmed-list.md"]
+    },
+    {
+      "id": 6,
+      "name": "Java-测试先行-最小桩与正确的失败原因",
+      "prompt": "要加退款功能，RefundService 还没写，我想测试先行。需求：1）已支付的订单可以退款，退款后订单状态变为 REFUNDED；2）退款金额不能超过实付金额；3）已退款的订单再次退款抛 AlreadyRefundedException；4）未支付的订单不能退款。先把测试写出来。",
+      "expected_output": "**模式：需求→测试代码（测试先行）。确认之前不得写入测试、桩或任何生产代码。**\n\n**【测试入口与最小桩】必须在确认轮中单列：**\n- `RefundService` 及退款方法的签名（如 `refund(String orderNo, BigDecimal amount)`），方法体只抛 `UnsupportedOperationException(\"not implemented\")`；\n- `AlreadyRefundedException` 类型；\n- **`OrderStatus` 里没有 `REFUNDED`：给现有枚举加常量属于修改现有生产类型，必须明确标出并单独确认**，默默加上判定失败。\n桩是唯一允许写进生产目录的内容；**提出或写出任何退款业务逻辑，判定失败**。\n\n**【待确认】** 需求 1 没说是全额还是部分退款，需求 2 又限制“不能超过实付”——是否允许部分退款必须列为待确认，不得自行假设。退款金额为 0 或负数需求也没写，同样列为待确认，或作为错误推测用例并标注。\n\n**【维度】** 边界：退款金额等于实付（成功）与多 0.01（拒绝）；状态：PAID → REFUNDED，未支付（CREATED、PAY_FAILED）被拒绝，已退款再退抛 AlreadyRefundedException；并发：同一订单并发退款，要么给用例，要么列入刻意不测并说明理由。\n\n**【运行约定】** 必须说明写完会运行，且每条测试都必须因“未实现 / 不符合需求”而失败（`UnsupportedOperationException` 或断言失败）；测试代码自身的编译错误不算合格的失败。最后把失败的测试作为实现待办，交给用户或 code-vibe-workflow。",
+      "files": ["evals/fixtures/java-order-service-sample.java"]
+    },
+    {
+      "id": 7,
+      "name": "Go-锁定现状-依据为实现",
+      "prompt": "coupon.go 下周要重构，先补一套测试把现在的行为锁住。",
+      "expected_output": "**必须识别为锁定现状（Lock）模式**：清单的依据列统一为“实现”，不发起 ⚠ 裁决。确认轮照常进行——**跳过确认直接写，判定失败**。\n\n**【现状标注】** 中文子测试名或描述以“现状：”开头，表明锁定的是当前行为，而不是规格。\n\n**【可疑行为照样锁定并附注】** 例如 `Discount` 传入负数面额会返回负数（相当于加价）：必须按实现锁定，同时在附注里写“已按现状锁定，建议另行确认”。把它当成缺陷要求裁决，或把预期改成“应返回 0”，判定失败。\n\n**【仍然适用的规则】** 判定表与边界照做（到期时刻、门槛金额、使用次数上限）；`IsWeekendPromo` 依然不可测，只报告、不重构；替换 `nowFunc` 后用 `t.Cleanup` 恢复。\n\n**【运行】** 锁定模式下所有测试必须通过；出现失败只能修测试，**修改 coupon.go 判定失败**。",
+      "files": ["evals/fixtures/go-coupon-sample.go"]
+    },
+    {
+      "id": 8,
+      "name": "Python-无测试基建-先给方案再动构建文件",
+      "prompt": "这个项目还没有任何测试，没装 pytest，也没有 tests 目录，依赖用 uv 和 pyproject.toml 管理。帮我给 pricing.py 写单元测试。",
+      "expected_output": "**确认轮里必须包含测试基建方案；确认之前不得修改 pyproject.toml，不得创建 tests 目录或任何测试文件。**\n\n**【方案内容】必须写清：**\n- 用 uv 把 pytest 加为开发依赖（如 `uv add --dev pytest`，写入 `[dependency-groups]`），并展示对 pyproject.toml 的具体改动；\n- `[tool.pytest.ini_options]` 中的 `testpaths` 与 `pythonpath`，保证测试能导入 `app` 包；\n- 测试位置 `tests/test_pricing.py`。\n同时给出“只写测试、不建基建（报告标未验证）”的备选项。\n\n**【用例】** 这里没有 diff，范围是整个 pricing.py，`format_price` 也在内。必须命中 `shipping_fee` 在小计恰好 100 时的 ⚠（docstring 写“满 100 元免运费”，实现用的是 `>`）。\n\n**【规范】** 项目没有先例，按内置规范：`test_<method>_<scene>_<expected>` 命名、中文 docstring、given / when / then 三段；金额用 `Decimal` 比较。",
+      "files": ["evals/fixtures/py-pricing-sample.py"]
+    },
+    {
+      "id": 9,
+      "name": "职责边界-不接覆盖率与端到端-照常写单测",
+      "prompt": "给 OrderService.createOrder 写单元测试；顺便把整个项目的单测覆盖率拉到 80%，再用 playwright 写一套从登录到下单的端到端测试。",
+      "expected_output": "**必须用一两句话明确不接两项越界请求，然后照常处理 createOrder。** 拒绝要简短，不得说教。\n\n1. **把整个项目覆盖率拉到 80%**——按覆盖率批量补测不在本 skill 范围，可以建议用户指定具体的类或方法。开始扫描全仓库、统计覆盖率或批量列目标，判定失败。\n2. **Playwright 端到端测试**——浏览器端到端测试不在本 skill 范围。写出任何 Playwright 测试代码，判定失败。\n\n拒绝之后必须继续为 `createOrder` 出标准版清单并发起确认，要求与“给 OrderService.createOrder 写单元测试”那条评估相同（两处 ⚠、边界、异常的副作用断言、只 mock 边界）。因为请求里有越界项就整体停下，判定失败。",
+      "files": ["evals/fixtures/java-order-service-sample.java"]
+    }
+  ]
+}

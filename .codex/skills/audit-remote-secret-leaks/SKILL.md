@@ -1,6 +1,6 @@
 ---
 name: audit-remote-secret-leaks
-description: "Use when a git project may have leaked private information, credentials, tokens, keys, passwords, PII, internal URLs, or secrets into pushed remote branch or tag history, or when local staged, unstaged, untracked, ignored, stashed, or local-only commits need leak risk review before push."
+description: "Use when a git project may have leaked private information, credentials, tokens, keys, passwords, PII, internal URLs, or secrets into pushed remote branch or tag history, or when local staged, unstaged, untracked, ignored, stashed, or local-only commits need leak risk review before push. Do not use for: actually pushing commits (use push-remote), producing release readiness or rollback plans (use release-readiness), or general code quality review (use code-review-deep-zh)."
 ---
 
 # 远程敏感信息泄露审计 (audit-remote-secret-leaks)

@@ -1,6 +1,6 @@
 ---
 name: code-annotating
-description: Use when the user wants comments or documentation added to code — a specific file, code related to an API or interface entry point, or uncommitted git changes. Trigger on requests like 加注释 / 补注释 / 完善注释 / 写注释 / add comments / annotate code / write Javadoc or docstrings — even when the user does not literally say "comment" but wants code documented. Confirms scope, detail level, and comment language interactively before any edits.
+description: Use when the user wants comments or documentation added to code — a specific file, code related to an API or interface entry point, or uncommitted git changes. Trigger on requests like 加注释 / 补注释 / 完善注释 / 写注释 / add comments / annotate code / write Javadoc or docstrings — even when the user does not literally say "comment" but wants code documented. Confirms scope, detail level, and comment language interactively before any edits. Do NOT use for: reviewing code quality (use code-review-deep-zh), deleting redundant code (use code-slimming), explaining code to the user instead of documenting it in place (use /explain), or writing design documents rather than code comments.
 ---
 
 # Annotating Code

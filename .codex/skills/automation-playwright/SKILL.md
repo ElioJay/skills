@@ -1,6 +1,6 @@
 ---
 name: "automation-playwright"
-description: "Use when the task requires automating a real browser from the terminal (navigation, form filling, snapshots, screenshots, data extraction, UI-flow debugging) via `playwright-cli` or the bundled wrapper script."
+description: "Use when the task requires automating a real browser from the terminal (navigation, form filling, snapshots, screenshots, data extraction, UI-flow debugging) via `playwright-cli` or the bundled wrapper script. Do not use for: designing or writing a repeatable integration or E2E test suite in CI (use integration-e2e-testing), unit tests (use code-testing), static code review (use code-review-deep-zh), or visual design decisions for a new UI (use frontend-design)."
 ---
 
 

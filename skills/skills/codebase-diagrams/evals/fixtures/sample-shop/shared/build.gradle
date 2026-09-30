@@ -1,0 +1,2 @@
+// shared 公共模块：无内部依赖（构建拓扑的基础/根）
+plugins { id 'java' }

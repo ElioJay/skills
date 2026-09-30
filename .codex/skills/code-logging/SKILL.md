@@ -1,6 +1,6 @@
 ---
 name: code-logging
-description: Use when the user wants the log statements in code standardized — audit and fix existing logging, correct log level / message shape / context keys, fill in missing log points, or restore a broken distributed traceId so that humans and AI can locate a problem from the logs alone. Trigger on 日志规范 / 规范日志 / 日志格式 / 日志标准化 / 日志规范化 / 补日志 / 加日志 / 日志打得太乱 / 日志看不出问题在哪 / 排查全靠猜 / traceId 断了 / 链路追不下去 / logging standards / structured logging / make logs debuggable / fix our logging. Confirms scope and every risky change interactively before editing.
+description: Use when the user wants the log statements in code standardized — audit and fix existing logging, correct log level / message shape / context keys, fill in missing log points, or restore a broken distributed traceId so that humans and AI can locate a problem from the logs alone. Trigger on 日志规范 / 规范日志 / 日志格式 / 日志标准化 / 日志规范化 / 补日志 / 加日志 / 日志打得太乱 / 日志看不出问题在哪 / 排查全靠猜 / traceId 断了 / 链路追不下去 / logging standards / structured logging / make logs debuggable / fix our logging. Confirms scope and every risky change interactively before editing. Do not use for 日志框架配置（logback/log4j）与采集端管道、监控指标与告警规则设计（用 observability-setup）、从既有日志定位具体故障（用 systematic-debugging）、性能测量（用 performance-investigation）。
 ---
 
 # Code Logging
