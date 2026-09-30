@@ -138,7 +138,7 @@ git clone --depth 1 https://github.com/ElioJay/skills.git
 
 | Skill | 宿主 | 用途 |
 |---|---|---|
-| [`push-remote`](./.claude/skills/push-remote/SKILL.md) | Claude + Codex | 安全地把本地提交推到远程：核对分支与 upstream、确认待推送提交、识别强推风险并优先用 `--force-with-lease`、推送后验证远程 ref、失败时给出可恢复步骤。 |
+| [`push-remote`](./.claude/skills/push-remote/SKILL.md) | Claude + Codex | 安全地把本地提交推到远程：核对分支与 upstream、确认待推送提交、识别强推风险并优先用 `--force-with-lease`、推送后验证远程 ref、失败时给出可恢复步骤。支持在 `local-config.json` 里固化持久推送授权，常规推送不再逐次确认；强推授权单独控制、互不蕴含。 |
 
 ### 自动化
 

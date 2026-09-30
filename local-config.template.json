@@ -1,0 +1,15 @@
+{
+  "_comment": "本机/本仓的推送授权配置。真实文件 local-config.json 已被 .gitignore 忽略，请勿提交。",
+  "_schema": {
+    "pushAuthorized": "布尔。为 true 表示用户已授予本仓持久推送授权，常规推送无需逐次确认。",
+    "forcePushAuthorized": "布尔。单独的高危授权，用于 --force-with-lease；与 pushAuthorized 互不蕴含。",
+    "protectedBranches": "字符串数组。这些分支上即使有授权也不允许强推。",
+    "authorizedAt": "授权日期（YYYY-MM-DD），便于复查授权是否过期。",
+    "authorizedBy": "授权来源，写清是谁、以什么方式授予的。"
+  },
+  "pushAuthorized": true,
+  "forcePushAuthorized": false,
+  "protectedBranches": ["main", "master", "release/*"],
+  "authorizedAt": "2026-05-24",
+  "authorizedBy": "用户在会话中明确授予『直接推送』的持久权限"
+}

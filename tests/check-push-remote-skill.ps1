@@ -72,6 +72,12 @@ if (Test-Path -LiteralPath $skillPath -PathType Leaf) {
 
     # 必须强调推送后验证，而不是只看退出码
     Assert-Contains -Text $skill -Pattern '推送后' -Label 'post-push verification requirement'
+
+    # 持久授权：放宽的是询问，不是核对
+    Assert-Contains -Text $skill -Pattern 'pushAuthorized' -Label 'persistent push authorization field'
+    Assert-Contains -Text $skill -Pattern 'forcePushAuthorized' -Label 'separate force push authorization'
+    Assert-Contains -Text $skill -Pattern '互不蕴含' -Label 'force authorization must not be implied'
+    Assert-Contains -Text $skill -Pattern 'local-config.template.json' -Label 'authorization config template reference'
 }
 
 # ---------------------------------------------------------------- references 契约
