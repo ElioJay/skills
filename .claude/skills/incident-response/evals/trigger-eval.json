@@ -1,0 +1,33 @@
+{
+  "skill_name": "incident-response",
+  "should_trigger": [
+    "线上出故障了，用户大面积报错，赶紧处理",
+    "生产环境服务不可用，帮我看看怎么先恢复",
+    "用户反馈 APP 打不开，客服已经在群里炸了",
+    "大促期间下单接口全 502，现场要立刻止血",
+    "比赛直播时系统崩了，先停服务还是先查原因",
+    "帮我把这次线上事故定个严重度级别，要通知谁",
+    "现在是不是该升级到 Sev1，谁来决策",
+    "写一份故障复盘报告，要时间线和防复发项",
+    "这次故障要做 postmortem，帮我按模板整理",
+    "production incident: checkout is down, help me stop the bleeding",
+    "we have an outage on the payment service, what is the sev level",
+    "on-call 接到报障，服务大面积报错，先做什么",
+    "线上数据好像写错了，要不要先清掉脏数据",
+    "帮我记录这次事故的时间线和影响面"
+  ],
+  "should_not_trigger": [
+    "这个接口 500 了，帮我定位根因并复现（用 systematic-debugging）",
+    "帮我排查为什么这个函数偶发返回 null（用 systematic-debugging）",
+    "写一份发布评审和回滚预案，评估这次能不能发（用 release-readiness）",
+    "准备发版，帮我做上线前准出检查和版本冻结（用 release-readiness）",
+    "帮我设计关键路径的监控指标和告警规则（用 observability-setup）",
+    "告警太吵了，帮我做告警降噪和阈值口径（用 observability-setup）",
+    "这个已知缺陷帮我修掉并补回归测试（用 defect-fix-loop）",
+    "审查一下这个模块的代码质量和安全风险（用 code-review-deep-zh）",
+    "帮我读懂这个服务的调用链，出一份阅读报告",
+    "改一下日志格式，把断掉的 traceId 补上（用 code-logging）",
+    "帮我优化这个查询的性能，先建基线再复测（用 performance-investigation）",
+    "帮我给这个项目画一套架构图（用 codebase-diagrams）"
+  ]
+}

@@ -30,19 +30,36 @@ jobs:
         run: ./scripts/check-skills-repo.ps1 -Strict
 
   skill-contracts:
-    name: 技能契约测试 / ${{ matrix.test }}
+    name: 技能契约测试
     runs-on: ubuntu-latest
-    strategy:
-      # 不要 fail-fast：一次跑完所有技能测试，才能看到完整的问题清单。
-      fail-fast: false
-      matrix:
-        test:
-          - check-audit-remote-secret-leaks-skill.ps1
-          - check-push-remote-skill.ps1
     steps:
       - name: 检出
         uses: actions/checkout@v5
 
-      - name: 运行 ${{ matrix.test }}
+      # 自动发现 tests/ 下的契约测试，而不是在 workflow 里硬编码清单：
+      # 新增技能时不需要改工作流，也就不会因为忘改而让新技能绕过门禁。
+      - name: 运行全部技能契约测试
         shell: pwsh
-        run: ./tests/${{ matrix.test }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tests = @(Get-ChildItem -Path './tests' -Filter 'check-*-skill.ps1' -File | Sort-Object Name)
+          if ($tests.Count -eq 0) {
+              Write-Error '未发现任何技能契约测试（tests/check-*-skill.ps1）'
+              exit 1
+          }
+
+          $failed = @()
+          foreach ($test in $tests) {
+              Write-Output "==== $($test.Name) ===="
+              # 每个测试用独立进程执行：同一 pwsh 会话内用 & 调用脚本时，
+              # 脚本里的 exit 不会设置 $LASTEXITCODE，会漏判失败。
+              & pwsh -NoProfile -File $test.FullName
+              if ($LASTEXITCODE -ne 0) { $failed += $test.Name }
+          }
+
+          Write-Output ''
+          Write-Output "共运行 $($tests.Count) 个技能契约测试，失败 $($failed.Count) 个。"
+          if ($failed.Count -gt 0) {
+              Write-Output ('失败：' + ($failed -join ', '))
+              exit 1
+          }

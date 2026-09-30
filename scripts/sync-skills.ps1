@@ -65,6 +65,11 @@ $targets = @($registry.hosts.PSObject.Properties | ForEach-Object {
 
 $skillsToSync = if ($Name) { $Name } else { @(Get-ChildItem -LiteralPath $sourceOfTruth -Directory | Select-Object -ExpandProperty Name | Sort-Object) }
 
+# 容错：`pwsh -File ... -Name a,b,c` 会把整个 "a,b,c" 作为单个字符串传入，这里按逗号再拆一次。
+# 注意技能名本身含连字符、不含逗号，因此拆分是安全的。
+# 多值请写成 `-Name a,b,c`（PowerShell 在 -File 调用下不支持空格分隔的多个值）。
+$skillsToSync = @($skillsToSync | ForEach-Object { $_ -split '[,\s]+' } | Where-Object { $_ } | Select-Object -Unique)
+
 $added = 0
 $updated = 0
 $removed = 0

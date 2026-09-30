@@ -276,6 +276,26 @@ if ($registry) {
             }
         }
     }
+
+    # 登记表声明的契约测试必须真实存在。
+    # CI 是按 tests/check-*-skill.ps1 自动发现的，两者不一致时这个字段就会变成误导性文档。
+    $declaredTests = @($registry.skills | Where-Object { $_.PSObject.Properties['tests'] } | ForEach-Object { $_.tests })
+    foreach ($declared in $declaredTests) {
+        if (-not (Test-Path -LiteralPath (Join-Path $repoRoot $declared) -PathType Leaf)) {
+            Add-Failure "登记表声明的契约测试不存在：$declared"
+        }
+    }
+
+    # 反向：存在契约测试却没被任何技能登记，说明登记字段漏填
+    $testsDir = Join-Path $repoRoot 'tests'
+    if (Test-Path -LiteralPath $testsDir -PathType Container) {
+        foreach ($testFile in Get-ChildItem -LiteralPath $testsDir -File -Filter 'check-*-skill.ps1') {
+            $relative = "tests/$($testFile.Name)"
+            if ($relative -notin $declaredTests) {
+                Add-Warning "契约测试 $relative 存在，但没有任何技能在登记表 tests 字段中引用它"
+            }
+        }
+    }
 }
 
 # ---------------------------------------------------------------- 5. 双宿主与真源一致

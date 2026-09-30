@@ -139,6 +139,15 @@ git clone --depth 1 https://github.com/ElioJay/skills.git
 | Skill | 宿主 | 用途 |
 |---|---|---|
 | [`push-remote`](./.claude/skills/push-remote/SKILL.md) | Claude + Codex | 安全地把本地提交推到远程：核对分支与 upstream、确认待推送提交、识别强推风险并优先用 `--force-with-lease`、推送后验证远程 ref、失败时给出可恢复步骤。支持在 `local-config.json` 里固化持久推送授权，常规推送不再逐次确认；强推授权单独控制、互不蕴含。 |
+| [`release-readiness`](./.claude/skills/release-readiness/SKILL.md) | Claude + Codex | 发布前准出检查与发布计划：版本冻结、构建与配置差异、升级脚本顺序与幂等、灰度与生产验证、回滚触发条件与演练，并给出「可以发 / 不能发」的结论与阻塞项。回滚方案未经验证时结论必须是「不能发」。 |
+
+### 运维与故障
+
+| Skill | 宿主 | 用途 |
+|---|---|---|
+| [`incident-response`](./.claude/skills/incident-response/SKILL.md) | Claude + Codex | 线上问题现场处置：先止血后定位，按严重度分级响应，划影响面，记录带证据的时间线，恢复判定与复盘。破坏性操作与数据修复逐项授权；根因定位交给 `systematic-debugging`。 |
+| [`defect-fix-loop`](./.claude/skills/defect-fix-loop/SKILL.md) | Claude + Codex | 缺陷修复闭环：分级与范围锁定、先有失败测试再改代码、最小改动、由影响面推导回归范围、验证证据与关闭条件。不得为让测试通过而删弱化测试；未复现不等于已修复。 |
+| [`observability-setup`](./.claude/skills/observability-setup/SKILL.md) | Claude + Codex | 为关键路径设计可观测性：从用户路径与故障模式推导指标、日志字段与追踪透传，定 SLO 与错误预算，设计可行动的告警与值班手册。高基数维度不得作为指标标签。 |
 
 ### 自动化
 

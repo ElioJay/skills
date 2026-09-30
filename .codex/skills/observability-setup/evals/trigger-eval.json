@@ -1,0 +1,37 @@
+{
+  "skill_name": "observability-setup",
+  "should_trigger": [
+    "给订单服务设计一套监控方案",
+    "这个模块要加哪些指标和埋点",
+    "日志里应该打哪些字段才够排查",
+    "怎么把这个调用链的 traceId 串起来",
+    "链路追踪接进来之后要检查哪些透传点",
+    "帮我们定一下核心接口的 SLO 和错误预算",
+    "错误预算烧完了该怎么办，想要一套处置规则",
+    "告警太多太吵了，帮我治理一下降噪",
+    "值班同学收到告警不知道先做什么，帮我写排查手册",
+    "上线前要准备观测手段，帮我列清单",
+    "哪些指标维度会导致基数爆炸，怎么控制",
+    "help me design monitoring for our critical user journeys",
+    "what metrics should we instrument on the checkout path",
+    "define an SLO and error budget for our API",
+    "our alerts are too noisy - reduce alert fatigue",
+    "write a runbook for the on-call engineer"
+  ],
+  "should_not_trigger": [
+    "规范一下这些代码里的日志语句，消息太乱了",
+    "把 logback.xml 的日志级别改一下",
+    "这次发布能不能发，帮我做准出检查",
+    "线上支付挂了，先止血恢复，帮我们处置现场",
+    "这个接口偶发 500，帮我定位根因",
+    "数据库慢查询导致接口超时，压测和优化怎么做",
+    "帮我补一组单元测试用例",
+    "深度审查一下这个 PR 的代码质量",
+    "把这个模块重构成可测试的结构，行为不变",
+    "把本地提交推到远程仓库",
+    "帮我生成这次发布的回滚预案",
+    "解释一下这段代码的作用",
+    "帮我把这个类的注释补全",
+    "接口契约设计成字段可空还是必填"
+  ]
+}

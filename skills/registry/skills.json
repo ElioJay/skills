@@ -1,7 +1,7 @@
 {
   "$schema": "./skills.schema.md",
   "registryVersion": 1,
-  "updatedAt": "2026-05-24",
+  "updatedAt": "2026-09-30",
   "conventions": {
     "sourceDir": "宿主中立技能的单一真源：skills/skills/<name>/。改动只改源，再跑 scripts/sync-skills.ps1 同步到 .claude/skills 与 .codex/skills。",
     "hostSpecific": "标记为 true 的技能，其正文按宿主不同（.claude 版写 Claude Code / AskUserQuestion，.codex 版写 Codex / request_user_input），因此不设单一真源，只做逐宿主契约校验；这类技能只存在于镜像目录。",
@@ -140,7 +140,7 @@
       ],
       "maturity": "stable",
       "evals": "evals/evals.json + evals/trigger-eval.json",
-      "notes": "缺陷：description 中引用了本仓不存在的 skill 名 `api-create-rule`，应改为 api-contract-design。"
+      "notes": "description 中曾引用的 `api-create-rule` 已修正为 api-contract-design（提交 7262a09）。"
     },
     {
       "name": "api-contract-design",
@@ -280,7 +280,7 @@
       ],
       "maturity": "stable",
       "evals": "evals/evals.json + evals/trigger-eval.json + fixtures",
-      "notes": "缺陷：description 中引用了本仓不存在的 skill 名 `interviewer-doc-review`。",
+      "notes": "description 中曾引用的 `interviewer-doc-review` 已修正为 code-review-deep-zh（提交 7262a09）。",
       "hostSpecific": true
     },
     {
@@ -293,12 +293,10 @@
       "evals": "missing",
       "hostSpecific": true,
       "notes": "与宿主内置 skill-creator 近义重名，存在路由冲突与安装覆盖风险；缺 evals；SKILL.md 文本按宿主定制（.codex 版写 Codex），故不进真源。"
-    }
-  ],
-  "planned": [
+    },
     {
       "name": "release-readiness",
-      "summary": "发布前准出检查：版本冻结、构建与配置差异、升级脚本顺序、灰度观测、回滚触发条件与演练。",
+      "summary": "发布前准出检查与发布计划：版本冻结、构建与配置差异、升级脚本顺序、灰度与生产验证、回滚触发条件与演练，并给出「可以发 / 不能发」的结论与阻塞项。",
       "lifecycle": [
         "61",
         "62",
@@ -307,37 +305,47 @@
         "65",
         "66"
       ],
-      "source": "技能建设差距分析.md 第 1 批 P0",
-      "notes": "补发布阶段 0 覆盖；尚未实现。"
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "tests": "tests/check-release-readiness-skill.ps1",
+      "notes": "硬约束：回滚方案未验证时准出结论必须写「不能发」；本技能只产出材料与结论，不执行部署、不改生产配置与数据。"
     },
     {
       "name": "incident-response",
-      "summary": "线上问题现场处置：严重度分级、先止血、时间线与影响面、复盘与防复发项。",
+      "summary": "线上问题现场处置：先止血后定位，按严重度分级响应，记录时间线与影响面，破坏性操作与数据修复逐项授权，产出复盘与防复发项。",
       "lifecycle": [
         "72"
       ],
-      "source": "技能建设差距分析.md 第 1 批 P0",
-      "notes": "与 systematic-debugging 分工：本技能管现场与止血，它管根因定位；尚未实现。"
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "tests": "tests/check-incident-response-skill.ps1",
+      "notes": "硬约束：止血优先于根因定位；破坏性操作（清数据、重启、回滚版本、封禁）需逐项授权；根因定位交给 systematic-debugging；复盘对事不对人。"
     },
     {
       "name": "observability-setup",
-      "summary": "为关键路径设计可观测性：指标日志追踪、SLO 与阈值口径、告警降噪与排查手册。",
+      "summary": "为关键路径设计可观测性：从用户路径与故障模式推导指标、日志字段与追踪透传，定义 SLO 与错误预算，设计可行动的告警与值班手册。",
       "lifecycle": [
         "71"
       ],
-      "source": "技能建设差距分析.md 第 1 批 P0",
-      "notes": "尚未实现。"
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "tests": "tests/check-observability-setup-skill.ps1",
+      "notes": "硬约束：高基数维度不得作为指标标签；告警必须可行动；不得记录密钥与个人敏感信息；改代码里的 log 语句交给 code-logging。"
     },
     {
       "name": "defect-fix-loop",
-      "summary": "缺陷修复闭环：分级与范围锁定、先失败测试后修复、回归范围推导与关闭条件。",
+      "summary": "缺陷修复闭环：分级与范围锁定、先有失败测试或等价复现证据再改代码、最小改动、由影响面推导回归范围、给出验证证据与关闭条件。",
       "lifecycle": [
         "73",
         "55"
       ],
-      "source": "技能建设差距分析.md 第 1 批 P0",
-      "notes": "尚未实现。"
-    },
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "tests": "tests/check-defect-fix-loop-skill.ps1",
+      "notes": "硬约束：不得为让测试通过而删除或弱化测试；未复现不等于已修复；原因未知的排查交给 systematic-debugging。"
+    }
+  ],
+  "planned": [
     {
       "name": "requirements-spec",
       "summary": "从调研与口头需求产出可测的需求规格：验收标准、非功能需求、评审门、基线化与变更单。",
