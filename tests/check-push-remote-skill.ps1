@@ -7,14 +7,15 @@
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
-$skillRoot = Join-Path $repoRoot 'skills\skills\push-remote'
+# 路径用正斜杠：PowerShell 在 Windows 与 Linux 上都接受，CI 在 ubuntu 上运行。
+$skillRoot = Join-Path $repoRoot 'skills/skills/push-remote'
 $skillPath = Join-Path $skillRoot 'SKILL.md'
-$strategiesPath = Join-Path $skillRoot 'references\push-strategies.md'
-$failureModesPath = Join-Path $skillRoot 'references\failure-modes.md'
-$reportTemplatePath = Join-Path $skillRoot 'assets\push-report-template.md'
-$evalsPath = Join-Path $skillRoot 'evals\evals.json'
-$triggerEvalPath = Join-Path $skillRoot 'evals\trigger-eval.json'
-$registryPath = Join-Path $repoRoot 'skills\registry\skills.json'
+$strategiesPath = Join-Path $skillRoot 'references/push-strategies.md'
+$failureModesPath = Join-Path $skillRoot 'references/failure-modes.md'
+$reportTemplatePath = Join-Path $skillRoot 'assets/push-report-template.md'
+$evalsPath = Join-Path $skillRoot 'evals/evals.json'
+$triggerEvalPath = Join-Path $skillRoot 'evals/trigger-eval.json'
+$registryPath = Join-Path $repoRoot 'skills/registry/skills.json'
 $readmePath = Join-Path $repoRoot 'README.md'
 
 $failures = New-Object System.Collections.Generic.List[string]

@@ -2,10 +2,11 @@
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
-$skillRoot = Join-Path $repoRoot ".claude\skills\audit-remote-secret-leaks"
+# 路径用正斜杠：PowerShell 在 Windows 与 Linux 上都接受，CI 在 ubuntu 上运行。
+$skillRoot = Join-Path $repoRoot ".claude/skills/audit-remote-secret-leaks"
 $skillPath = Join-Path $skillRoot "SKILL.md"
-$patternsPath = Join-Path $skillRoot "references\sensitive-patterns.md"
-$templatePath = Join-Path $skillRoot "references\report-template.md"
+$patternsPath = Join-Path $skillRoot "references/sensitive-patterns.md"
+$templatePath = Join-Path $skillRoot "references/report-template.md"
 $readmePath = Join-Path $repoRoot "README.md"
 
 $failures = New-Object System.Collections.Generic.List[string]

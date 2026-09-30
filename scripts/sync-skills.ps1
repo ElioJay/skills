@@ -13,8 +13,9 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$registryPath = Join-Path $repoRoot 'skills\registry\skills.json'
-$sourceOfTruth = Join-Path $repoRoot 'skills\skills'
+# 路径一律用正斜杠书写：PowerShell 在 Windows 与 Linux 上都接受，反斜杠在 Linux 上不是分隔符。
+$registryPath = Join-Path $repoRoot 'skills/registry/skills.json'
+$sourceOfTruth = Join-Path $repoRoot 'skills/skills'
 
 if (-not (Test-Path -LiteralPath $registryPath -PathType Leaf)) {
     Write-Error "缺技能登记表：$registryPath"
@@ -23,9 +24,16 @@ if (-not (Test-Path -LiteralPath $registryPath -PathType Leaf)) {
 
 $registry = Get-Content -LiteralPath $registryPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
+function ConvertTo-NativePath {
+    param([string] $Path)
+
+    if ([System.IO.Path]::DirectorySeparatorChar -eq '/') { return $Path }
+    return ($Path -replace '/', '\')
+}
+
 # 真源自身不参与镜像；evaluation 是历史评测产出，同样不进镜像。
 # evals/ 属技能契约的一部分（触发样例与质量用例），需随技能一起同步。
-$excludedPrefixes = @('skills\', 'skills/', 'evaluation\', 'evaluation/')
+$excludedPrefixes = @('skills/', 'evaluation/')
 
 function Test-Excluded {
     param([string] $RelativePath)
@@ -37,18 +45,22 @@ function Test-Excluded {
 }
 
 function Get-SyncableFiles {
+    <#
+      返回技能目录下需要同步的文件相对路径，统一用正斜杠，
+      以便 Windows 与 Linux 上得到同一份清单、同一个排序。
+    #>
     param([string] $SkillDir)
 
     if (-not (Test-Path -LiteralPath $SkillDir -PathType Container)) { return @() }
 
     Get-ChildItem -LiteralPath $SkillDir -Recurse -File |
-        ForEach-Object { $_.FullName.Substring($SkillDir.Length).TrimStart('\', '/') } |
+        ForEach-Object { $_.FullName.Substring($SkillDir.Length).TrimStart('\', '/') -replace '\\', '/' } |
         Where-Object { -not (Test-Excluded -RelativePath $_) } |
         Sort-Object
 }
 
 $targets = @($registry.hosts.PSObject.Properties | ForEach-Object {
-    [pscustomobject]@{ Host = $_.Name; Path = Join-Path $repoRoot ($_.Value -replace '/', '\') }
+    [pscustomobject]@{ Host = $_.Name; Path = Join-Path $repoRoot (ConvertTo-NativePath $_.Value) }
 })
 
 $skillsToSync = if ($Name) { $Name } else { @(Get-ChildItem -LiteralPath $sourceOfTruth -Directory | Select-Object -ExpandProperty Name | Sort-Object) }

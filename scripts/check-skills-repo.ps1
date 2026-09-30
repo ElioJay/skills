@@ -1,29 +1,44 @@
 # check-skills-repo.ps1
 # 用途：校验本仓库技能库的契约、登记表与实际文件是否一致。CI 与本地共用。
 # 输入：无必需参数。以脚本所在目录的上一级为仓库根。
-# 输出：PASS / FAIL / WARN 逐条列出；有 FAIL 时以 1 退出，否则 0。
-# 退出码：0 = 通过（可含 WARN）；1 = 存在 FAIL。
+#       -Strict 把提醒（WARN）也视为失败，用于 CI 锁住"零提醒"的现状。
+# 输出：WARN / FAIL 逐条列出，最后给通过或失败摘要。
+# 退出码：0 = 通过；1 = 存在 FAIL（-Strict 下 WARN 也计为失败）。
 
 [CmdletBinding()]
 param(
     # description 字符数允许区间。低于下限说明触发信息不足，高于上限会挤占上下文。
     [int] $MinDescriptionChars = 40,
-    [int] $MaxDescriptionChars = 1200
+    [int] $MaxDescriptionChars = 1200,
+    # CI 用：提醒即失败，避免新债悄悄进来。
+    [switch] $Strict
 )
 
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$registryPath = Join-Path $repoRoot 'skills\registry\skills.json'
+# 路径一律用正斜杠书写：PowerShell 在 Windows 与 Linux 上都接受，反斜杠在 Linux 上不是分隔符。
+$registryPath = Join-Path $repoRoot 'skills/registry/skills.json'
 $readmePath = Join-Path $repoRoot 'README.md'
 $docsRoot = Join-Path $repoRoot '.docs'
-$sourceOfTruth = Join-Path $repoRoot 'skills\skills'
+$sourceOfTruth = Join-Path $repoRoot 'skills/skills'
 
 $failures = New-Object System.Collections.Generic.List[string]
 $warnings = New-Object System.Collections.Generic.List[string]
 
 function Add-Failure { param([string] $Message) $script:failures.Add($Message) }
 function Add-Warning { param([string] $Message) $script:warnings.Add($Message) }
+
+function ConvertTo-NativePath {
+    <#
+      把登记表里以正斜杠书写的目录转成本机路径形式。
+      Windows 上 Join-Path 能直接处理正斜杠并输出反斜杠，无需额外处理。
+    #>
+    param([string] $Path)
+
+    if ([System.IO.Path]::DirectorySeparatorChar -eq '/') { return $Path }
+    return ($Path -replace '/', '\')
+}
 
 function Get-SkillMeta {
     <#
@@ -65,8 +80,8 @@ function Get-RelativeFileSet {
     if (-not (Test-Path -LiteralPath $SkillDir -PathType Container)) { return @() }
 
     Get-ChildItem -LiteralPath $SkillDir -Recurse -File |
-        ForEach-Object { $_.FullName.Substring($SkillDir.Length).TrimStart('\', '/') } |
-        Where-Object { $_ -notmatch '^(evals|evaluation)[\\/]' } |
+        ForEach-Object { $_.FullName.Substring($SkillDir.Length).TrimStart('\', '/') -replace '\\', '/' } |
+        Where-Object { $_ -notmatch '^(evals|evaluation)/' } |
         Sort-Object
 }
 
@@ -109,7 +124,7 @@ if ($registry) { $registryNames = @($registry.skills | ForEach-Object { $_.name 
 $hostDirs = @()
 if ($registry) {
     foreach ($property in $registry.hosts.PSObject.Properties) {
-        $hostDirs += [pscustomobject]@{ Host = $property.Name; Path = Join-Path $repoRoot ($property.Value -replace '/', '\') }
+        $hostDirs += [pscustomobject]@{ Host = $property.Name; Path = Join-Path $repoRoot (ConvertTo-NativePath $property.Value) }
     }
 }
 
@@ -447,11 +462,22 @@ if (Test-Path -LiteralPath $sourceOfTruth -PathType Container) {
 
 foreach ($message in $warnings) { Write-Output "WARN  $message" }
 
-if ($failures.Count -gt 0) {
+# -Strict：提醒也计为失败，用于 CI 防止新债进入。
+$effectiveFailureCount = $failures.Count
+$strictNote = ''
+if ($Strict -and $warnings.Count -gt 0) {
+    $effectiveFailureCount += $warnings.Count
+    $strictNote = "（-Strict：$($warnings.Count) 项提醒计为失败）"
+}
+
+if ($effectiveFailureCount -gt 0) {
     Write-Output ''
     foreach ($message in $failures) { Write-Output "FAIL  $message" }
+    if ($Strict) {
+        foreach ($message in $warnings) { Write-Output "FAIL  [strict] $message" }
+    }
     Write-Output ''
-    Write-Output "技能库校验失败：$($failures.Count) 项失败、$($warnings.Count) 项提醒。"
+    Write-Output "技能库校验失败：$effectiveFailureCount 项$strictNote。"
     exit 1
 }
 

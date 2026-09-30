@@ -1,2 +1,10 @@
 # Shell scripts must remain executable by Bash on every platform.
 *.sh text eol=lf
+
+# 脚本在 Linux CI 上由 bash/pwsh 直接执行，CRLF 会导致解释器报错，统一锁成 LF。
+*.ps1 text eol=lf
+
+# CI 工作流与 JSON 配置同样保持 LF，避免 diff 噪声。
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf

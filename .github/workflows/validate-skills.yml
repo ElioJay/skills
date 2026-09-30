@@ -1,0 +1,47 @@
+name: validate-skills
+
+# 技能库是纯文本契约，没有编译步骤；这里的"测试"就是契约校验与技能契约测试。
+# on 加引号：YAML 1.1 会把裸 on 解析成布尔值，不同解析器行为不一致。
+"on":
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支上新的推送取消上一次未完成的运行，避免排队浪费。
+concurrency:
+  group: validate-skills-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  repo-contract:
+    name: 仓库级契约校验
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出
+        uses: actions/checkout@v4
+
+      - name: 校验技能库（-Strict：提醒即失败）
+        shell: pwsh
+        run: ./scripts/check-skills-repo.ps1 -Strict
+
+  skill-contracts:
+    name: 技能契约测试 / ${{ matrix.test }}
+    runs-on: ubuntu-latest
+    strategy:
+      # 不要 fail-fast：一次跑完所有技能测试，才能看到完整的问题清单。
+      fail-fast: false
+      matrix:
+        test:
+          - check-audit-remote-secret-leaks-skill.ps1
+          - check-push-remote-skill.ps1
+    steps:
+      - name: 检出
+        uses: actions/checkout@v4
+
+      - name: 运行 ${{ matrix.test }}
+        shell: pwsh
+        run: ./tests/${{ matrix.test }}
