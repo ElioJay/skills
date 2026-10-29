@@ -1,0 +1,5 @@
+interface:
+  display_name: "Ambitious"
+  short_description: "把普通任务按高度、深度、广度改写成更有野心的方案，确认后再执行"
+policy:
+  allow_implicit_invocation: false

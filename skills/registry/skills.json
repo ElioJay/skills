@@ -1,7 +1,7 @@
 {
   "$schema": "./skills.schema.md",
   "registryVersion": 1,
-  "updatedAt": "2026-09-30",
+  "updatedAt": "2026-10-29",
   "conventions": {
     "sourceDir": "宿主中立技能的单一真源：skills/skills/<name>/。改动只改源，再跑 scripts/sync-skills.ps1 同步到 .claude/skills 与 .codex/skills。",
     "hostSpecific": "标记为 true 的技能，其正文按宿主不同（.claude 版写 Claude Code / AskUserQuestion，.codex 版写 Codex / request_user_input），因此不设单一真源，只做逐宿主契约校验；这类技能只存在于镜像目录。",
@@ -293,6 +293,17 @@
       "evals": "missing",
       "hostSpecific": true,
       "notes": "与宿主内置 skill-creator 近义重名，存在路由冲突与安装覆盖风险；缺 evals；SKILL.md 文本按宿主定制（.codex 版写 Codex），故不进真源。"
+    },
+    {
+      "name": "ambitious",
+      "summary": "按「高度、深度、广度」三种野心把普通任务改写成更有野心的方案，带可运行的外部验证，用户确认后再执行；仅手动调用。",
+      "lifecycle": [
+        "00"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "hostSpecific": true,
+      "notes": "仅手动调用：Claude 版靠 frontmatter 的 disable-model-invocation，Codex 版靠 agents/openai.yaml 的 policy.allow_implicit_invocation: false；两边 frontmatter 与确认工具（AskUserQuestion / request_user_input）不同，故不进真源。trigger-eval 正例只收显式调用（/ambitious、$ambitious），负例用来确认普通请求不被接管，不跑基于 description 的自动路由评测。SKILL.md 不足 120 行，无 references。契约测试只在本地保留（tests/ 被 gitignore，未提交），故不登记 tests 字段。"
     },
     {
       "name": "release-readiness",

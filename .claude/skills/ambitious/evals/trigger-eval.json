@@ -1,0 +1,18 @@
+{
+  "skill_name": "ambitious",
+  "should_trigger": [
+    "/ambitious 帮我整理一份本季度线上故障的复盘 PPT",
+    "/ambitious 给团队写一份新人入职指南",
+    "/ambitious 把我们产品落地页的注册转化率提上去",
+    "/ambitious 给我的个人主页重新设计一下",
+    "/ambitious 给 api-gateway 项目写个 README"
+  ],
+  "should_not_trigger": [
+    "帮我给订单服务加一个导出 Excel 的接口（用 code-vibe-workflow）",
+    "我有个迁移方案，你来狠狠拷问一下（用 grilling）",
+    "帮我起草一个新的 skill（用 skill-creator-guide）",
+    "这段文字一股 AI 味，帮我改得像人写的（用 naturalize-zh）",
+    "这个接口 500 了，帮我定位根因（用 systematic-debugging）",
+    "给我女儿的生日写一首四行小诗（直接写，不需要技能）"
+  ]
+}
