@@ -1,0 +1,5 @@
+interface:
+  display_name: "Chat Sync"
+  short_description: "把当前会话增量同步到 Markdown 指定章节：原话逐字写入，AI 回复压成要点"
+policy:
+  allow_implicit_invocation: false

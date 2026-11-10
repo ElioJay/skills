@@ -192,6 +192,7 @@ git clone --depth 1 https://github.com/ElioJay/skills.git
 | [`naturalize-zh`](./.claude/skills/naturalize-zh/SKILL.md) | Claude + Codex | 去除中文文本中的机器化表达。 |
 | [`skill-creator-guide`](./.claude/skills/skill-creator-guide/SKILL.md) | Claude + Codex | 通过对话生成结构清楚的 Skill 草稿。 |
 | [`ambitious`](./.claude/skills/ambitious/SKILL.md) | Claude + Codex | 把普通任务按高度、深度、广度改写成更有野心的方案，确认后再执行；仅手动调用。 |
+| [`chat-sync`](./.claude/skills/chat-sync/SKILL.md) | Claude + Codex | 把当前会话增量同步到 Markdown 文件的指定章节：原话逐字写入，AI 回复压成要点；仅手动调用。 |
 
 ## 仓库结构
 

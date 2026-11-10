@@ -1,0 +1,18 @@
+{
+  "skill_name": "chat-sync",
+  "should_trigger": [
+    "/chat-sync D:\\notes\\工作日志.md 项目A/讨论记录",
+    "/chat-sync docs/meeting.md 需求评审",
+    "/chat-sync \"D:\\My Notes\\周报.md\" 本周/与 AI 的讨论",
+    "/chat-sync notes.md 讨论记录",
+    "/chat-sync D:\\kb\\chat-log.md 2026-11/chat-sync 设计"
+  ],
+  "should_not_trigger": [
+    "总结一下我们刚才聊了什么（直接回答，不需要技能）",
+    "把这次对话导出成 Word 文档（用 docx）",
+    "把刚才讨论的方案查证一下，整理成调研文档（用 research）",
+    "帮我把这个多步骤任务做个计划并持续记录进度（用 planning-with-files-zh）",
+    "帮我起草一个新的 skill（用 skill-creator-guide）",
+    "这段文字一股 AI 味，帮我改得像人写的（用 naturalize-zh）"
+  ]
+}

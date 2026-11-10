@@ -1,7 +1,7 @@
 {
   "$schema": "./skills.schema.md",
   "registryVersion": 1,
-  "updatedAt": "2026-10-29",
+  "updatedAt": "2026-11-10",
   "conventions": {
     "sourceDir": "宿主中立技能的单一真源：skills/skills/<name>/。改动只改源，再跑 scripts/sync-skills.ps1 同步到 .claude/skills 与 .codex/skills。",
     "hostSpecific": "标记为 true 的技能，其正文按宿主不同（.claude 版写 Claude Code / AskUserQuestion，.codex 版写 Codex / request_user_input），因此不设单一真源，只做逐宿主契约校验；这类技能只存在于镜像目录。",
@@ -304,6 +304,17 @@
       "evals": "evals/evals.json + evals/trigger-eval.json",
       "hostSpecific": true,
       "notes": "仅手动调用：Claude 版靠 frontmatter 的 disable-model-invocation，Codex 版靠 agents/openai.yaml 的 policy.allow_implicit_invocation: false；两边 frontmatter 与确认工具（AskUserQuestion / request_user_input）不同，故不进真源。trigger-eval 正例只收显式调用（/ambitious、$ambitious），负例用来确认普通请求不被接管，不跑基于 description 的自动路由评测。SKILL.md 不足 120 行，无 references。契约测试只在本地保留（tests/ 被 gitignore，未提交），故不登记 tests 字段。"
+    },
+    {
+      "name": "chat-sync",
+      "summary": "把当前会话增量同步到 Markdown 文件的指定章节：用户原话逐字写入（疑似密钥打码），AI 回复压成要点；仅手动调用。",
+      "lifecycle": [
+        "00"
+      ],
+      "maturity": "stable",
+      "evals": "evals/evals.json + evals/trigger-eval.json",
+      "hostSpecific": true,
+      "notes": "仅手动调用：Claude 版靠 frontmatter 的 disable-model-invocation，Codex 版靠 agents/openai.yaml 的 policy.allow_implicit_invocation: false。两版各带一份 scripts/Sync-Chat.ps1，同名不同实现：Claude 版解析 ~/.claude/projects/*/<会话ID>.jsonl，Codex 版解析 $CODEX_HOME/sessions 下的 rollout（只支持 paginated 格式）；章节定位、渲染、打码与增量标记逻辑两份各写一遍，修改时必须两处同步，契约测试会比对两份共用函数是否一致。trigger-eval 正例只收显式调用（/chat-sync、$chat-sync），不跑基于 description 的自动路由评测。SKILL.md 不足 120 行，输出格式由脚本固定，无 references/assets。契约测试只在本地保留（tests/ 被 gitignore，未提交），故不登记 tests 字段。"
     },
     {
       "name": "release-readiness",
