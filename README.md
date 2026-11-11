@@ -1,8 +1,8 @@
 # Skills for Practical Engineering
 
 [![License](https://img.shields.io/github/license/ElioJay/skills)](./LICENSE)
-[![Claude Code](https://img.shields.io/badge/Claude_Code-supported-7C3AED)](./.claude/skills)
-[![Codex](https://img.shields.io/badge/Codex-supported-111827)](./.codex/skills)
+[![Claude Code](https://img.shields.io/badge/Claude_Code-supported-7C3AED)](./skills/skills)
+[![Codex](https://img.shields.io/badge/Codex-supported-111827)](./skills/skills)
 
 一组用于真实软件工程工作的 Agent Skills：读代码、排查故障、做审查、推进开发、自动化浏览器，并在发布前检查敏感信息。
 
@@ -11,6 +11,8 @@
 ## 快速安装
 
 需要先安装 Node.js（自带 npm）。推荐使用官方 [`skills`](https://github.com/vercel-labs/skills) CLI，它会识别仓库中的 `SKILL.md`，并将技能安装到所选 Agent 的目录。
+
+所有技能都只有一份，放在 `skills/skills/<skill-name>/`，Claude Code 与 Codex 共用同一份文件：Claude Code 装到 `.claude/skills`，Codex 装到 `.agents/skills`。仓库里的 `.claude/skills` 与 `.codex/skills` 是空目录，不放技能。
 
 ### 方式一：使用 npx 安装（推荐）
 
@@ -45,6 +47,12 @@ npx skills@latest add ElioJay/skills \
   -g -y
 ```
 
+一次把全部技能装到两个 Agent 的用户级目录：
+
+```bash
+npx skills@latest add ElioJay/skills --skill '*' --agent claude-code --agent codex -g -y
+```
+
 更新已安装的技能：
 
 ```bash
@@ -57,10 +65,10 @@ npx skills update
 git clone https://github.com/ElioJay/skills.git
 ```
 
-根据使用的 Agent，复制需要的技能目录：
+技能都在 `skills/skills/<skill-name>/`。根据使用的 Agent，把需要的技能目录复制到：
 
-- Claude Code：`.claude/skills/<skill-name>/`
-- Codex：`.codex/skills/<skill-name>/`
+- Claude Code：`~/.claude/skills/<skill-name>/`（用户级），或项目里的 `.claude/skills/<skill-name>/`
+- Codex：`~/.agents/skills/<skill-name>/`（用户级），或项目里的 `.agents/skills/<skill-name>/`
 
 技能目录应整体复制。`SKILL.md` 是入口，旁边的 `references`、`scripts`、`assets` 和 `evals` 可能是运行所需资源。
 
@@ -70,7 +78,7 @@ git clone https://github.com/ElioJay/skills.git
 git clone --depth 1 https://github.com/ElioJay/skills.git
 ```
 
-然后仅复制目标技能在对应宿主目录下的完整子目录。不要只复制 `SKILL.md`。
+然后只复制 `skills/skills/<skill-name>/` 这一个完整目录，放到方式二列出的位置。不要只复制 `SKILL.md`。
 
 ## 为什么需要这些技能
 
@@ -132,67 +140,67 @@ git clone --depth 1 https://github.com/ElioJay/skills.git
 
 | Skill | 宿主 | 用途 |
 |---|---|---|
-| [`audit-remote-secret-leaks`](./.claude/skills/audit-remote-secret-leaks/SKILL.md) | Claude + Codex | 审计 Git 历史、工作区、ignored 文件和 stash 中的敏感信息风险。 |
+| [`audit-remote-secret-leaks`](./skills/skills/audit-remote-secret-leaks/SKILL.md) | Claude + Codex | 审计 Git 历史、工作区、ignored 文件和 stash 中的敏感信息风险。 |
 
 ### 协作与发布
 
 | Skill | 宿主 | 用途 |
 |---|---|---|
-| [`push-remote`](./.claude/skills/push-remote/SKILL.md) | Claude + Codex | 安全地把本地提交推到远程：核对分支与 upstream、确认待推送提交、识别强推风险并优先用 `--force-with-lease`、推送后验证远程 ref、失败时给出可恢复步骤。支持在 `local-config.json` 里固化持久推送授权，常规推送不再逐次确认；强推授权单独控制、互不蕴含。 |
-| [`release-readiness`](./.claude/skills/release-readiness/SKILL.md) | Claude + Codex | 发布前准出检查与发布计划：版本冻结、构建与配置差异、升级脚本顺序与幂等、灰度与生产验证、回滚触发条件与演练，并给出「可以发 / 不能发」的结论与阻塞项。回滚方案未经验证时结论必须是「不能发」。 |
+| [`push-remote`](./skills/skills/push-remote/SKILL.md) | Claude + Codex | 安全地把本地提交推到远程：核对分支与 upstream、确认待推送提交、识别强推风险并优先用 `--force-with-lease`、推送后验证远程 ref、失败时给出可恢复步骤。支持在 `local-config.json` 里固化持久推送授权，常规推送不再逐次确认；强推授权单独控制、互不蕴含。 |
+| [`release-readiness`](./skills/skills/release-readiness/SKILL.md) | Claude + Codex | 发布前准出检查与发布计划：版本冻结、构建与配置差异、升级脚本顺序与幂等、灰度与生产验证、回滚触发条件与演练，并给出「可以发 / 不能发」的结论与阻塞项。回滚方案未经验证时结论必须是「不能发」。 |
 
 ### 运维与故障
 
 | Skill | 宿主 | 用途 |
 |---|---|---|
-| [`incident-response`](./.claude/skills/incident-response/SKILL.md) | Claude + Codex | 线上问题现场处置：先止血后定位，按严重度分级响应，划影响面，记录带证据的时间线，恢复判定与复盘。破坏性操作与数据修复逐项授权；根因定位交给 `systematic-debugging`。 |
-| [`defect-fix-loop`](./.claude/skills/defect-fix-loop/SKILL.md) | Claude + Codex | 缺陷修复闭环：分级与范围锁定、先有失败测试再改代码、最小改动、由影响面推导回归范围、验证证据与关闭条件。不得为让测试通过而删弱化测试；未复现不等于已修复。 |
-| [`observability-setup`](./.claude/skills/observability-setup/SKILL.md) | Claude + Codex | 为关键路径设计可观测性：从用户路径与故障模式推导指标、日志字段与追踪透传，定 SLO 与错误预算，设计可行动的告警与值班手册。高基数维度不得作为指标标签。 |
+| [`incident-response`](./skills/skills/incident-response/SKILL.md) | Claude + Codex | 线上问题现场处置：先止血后定位，按严重度分级响应，划影响面，记录带证据的时间线，恢复判定与复盘。破坏性操作与数据修复逐项授权；根因定位交给 `systematic-debugging`。 |
+| [`defect-fix-loop`](./skills/skills/defect-fix-loop/SKILL.md) | Claude + Codex | 缺陷修复闭环：分级与范围锁定、先有失败测试再改代码、最小改动、由影响面推导回归范围、验证证据与关闭条件。不得为让测试通过而删弱化测试；未复现不等于已修复。 |
+| [`observability-setup`](./skills/skills/observability-setup/SKILL.md) | Claude + Codex | 为关键路径设计可观测性：从用户路径与故障模式推导指标、日志字段与追踪透传，定 SLO 与错误预算，设计可行动的告警与值班手册。高基数维度不得作为指标标签。 |
 
 ### 自动化
 
 | Skill | 宿主 | 用途 |
 |---|---|---|
-| [`automation-playwright`](./.claude/skills/automation-playwright/SKILL.md) | Claude + Codex | 通过终端自动化真实浏览器。 |
+| [`automation-playwright`](./skills/skills/automation-playwright/SKILL.md) | Claude + Codex | 通过终端自动化真实浏览器。 |
 
 ### 代码阅读
 
 | Skill | 宿主 | 用途 |
 |---|---|---|
-| [`code-read-deep-function`](./.claude/skills/code-read-deep-function/SKILL.md) | Claude + Codex | 从明确的方法入口追踪调用链与数据流。 |
-| [`code-read-deep-file`](./.claude/skills/code-read-deep-file/SKILL.md) | Claude + Codex | 通读单个源文件，输出结构与依赖地图。 |
-| [`code-read-deep-module`](./.claude/skills/code-read-deep-module/SKILL.md) | Claude + Codex | 阅读单个模块、包或目录并检查内部依赖。 |
-| [`code-read-deep-project`](./.claude/skills/code-read-deep-project/SKILL.md) | Claude + Codex | 建立项目级技术栈、容器和模块依赖全景。 |
-| [`code-read-deep-trace`](./.claude/skills/code-read-deep-trace/SKILL.md) | Claude + Codex | 沿业务能力、关注点或字段跨模块追踪。 |
-| [`code-read-deep-change`](./.claude/skills/code-read-deep-change/SKILL.md) | Claude + Codex | 解释一次 diff、commit 或 PR 的意图与影响半径。 |
+| [`code-read-deep-function`](./skills/skills/code-read-deep-function/SKILL.md) | Claude + Codex | 从明确的方法入口追踪调用链与数据流。 |
+| [`code-read-deep-file`](./skills/skills/code-read-deep-file/SKILL.md) | Claude + Codex | 通读单个源文件，输出结构与依赖地图。 |
+| [`code-read-deep-module`](./skills/skills/code-read-deep-module/SKILL.md) | Claude + Codex | 阅读单个模块、包或目录并检查内部依赖。 |
+| [`code-read-deep-project`](./skills/skills/code-read-deep-project/SKILL.md) | Claude + Codex | 建立项目级技术栈、容器和模块依赖全景。 |
+| [`code-read-deep-trace`](./skills/skills/code-read-deep-trace/SKILL.md) | Claude + Codex | 沿业务能力、关注点或字段跨模块追踪。 |
+| [`code-read-deep-change`](./skills/skills/code-read-deep-change/SKILL.md) | Claude + Codex | 解释一次 diff、commit 或 PR 的意图与影响半径。 |
 
 ### 开发与审查
 
 | Skill | 宿主 | 用途 |
 |---|---|---|
-| [`code-annotating`](./.claude/skills/code-annotating/SKILL.md) | Claude + Codex | 为非显而易见的意图、约束和取舍补充注释。 |
-| [`code-slimming`](./.claude/skills/code-slimming/SKILL.md) | Claude + Codex | 删除新写代码中的冗余，只做减法与就地内联。 |
-| [`code-logging`](./.claude/skills/code-logging/SKILL.md) | Claude + Codex | 规范代码中的日志语句，补齐打点与断掉的 traceId。 |
-| [`systematic-debugging`](./.claude/skills/systematic-debugging/SKILL.md) | Claude + Codex | 从具体故障的现象和证据验证根因，按需完成最小修复与回归。 |
-| [`behavior-preserving-refactor`](./.claude/skills/behavior-preserving-refactor/SKILL.md) | Claude + Codex | 在重构前后核对可观察行为与测试基线。 |
-| [`api-contract-design`](./.claude/skills/api-contract-design/SKILL.md) | Claude + Codex | 设计接口字段、错误语义、示例与兼容迁移。 |
-| [`code-testing`](./.claude/skills/code-testing/SKILL.md) | Claude + Codex | 先确认用例清单，再写测试代码或用例文档。 |
-| [`integration-e2e-testing`](./.claude/skills/integration-e2e-testing/SKILL.md) | Claude + Codex | 编写可重复运行的跨组件和浏览器流程测试。 |
-| [`database-migration`](./.claude/skills/database-migration/SKILL.md) | Claude + Codex | 设计与验证库表和存量数据迁移及恢复路径。 |
-| [`performance-investigation`](./.claude/skills/performance-investigation/SKILL.md) | Claude + Codex | 用基线、剖析和复测定位并验证性能瓶颈。 |
-| [`code-review-deep-zh`](./.claude/skills/code-review-deep-zh/SKILL.md) | Claude + Codex | 执行十维度中文深度代码审查。 |
-| [`code-vibe-workflow`](./.claude/skills/code-vibe-workflow/SKILL.md) | Claude + Codex | 推进需求到提交的完整开发闭环。 |
-| [`design-pattern-advisor`](./.claude/skills/design-pattern-advisor/SKILL.md) | Claude + Codex | 判断是否需要设计模式，并给出最小实现。 |
-| [`codebase-diagrams`](./.claude/skills/codebase-diagrams/SKILL.md) | Claude + Codex | 生成项目、模块和方法级 Mermaid 图集。 |
+| [`code-annotating`](./skills/skills/code-annotating/SKILL.md) | Claude + Codex | 为非显而易见的意图、约束和取舍补充注释。 |
+| [`code-slimming`](./skills/skills/code-slimming/SKILL.md) | Claude + Codex | 删除新写代码中的冗余，只做减法与就地内联。 |
+| [`code-logging`](./skills/skills/code-logging/SKILL.md) | Claude + Codex | 规范代码中的日志语句，补齐打点与断掉的 traceId。 |
+| [`systematic-debugging`](./skills/skills/systematic-debugging/SKILL.md) | Claude + Codex | 从具体故障的现象和证据验证根因，按需完成最小修复与回归。 |
+| [`behavior-preserving-refactor`](./skills/skills/behavior-preserving-refactor/SKILL.md) | Claude + Codex | 在重构前后核对可观察行为与测试基线。 |
+| [`api-contract-design`](./skills/skills/api-contract-design/SKILL.md) | Claude + Codex | 设计接口字段、错误语义、示例与兼容迁移。 |
+| [`code-testing`](./skills/skills/code-testing/SKILL.md) | Claude + Codex | 先确认用例清单，再写测试代码或用例文档。 |
+| [`integration-e2e-testing`](./skills/skills/integration-e2e-testing/SKILL.md) | Claude + Codex | 编写可重复运行的跨组件和浏览器流程测试。 |
+| [`database-migration`](./skills/skills/database-migration/SKILL.md) | Claude + Codex | 设计与验证库表和存量数据迁移及恢复路径。 |
+| [`performance-investigation`](./skills/skills/performance-investigation/SKILL.md) | Claude + Codex | 用基线、剖析和复测定位并验证性能瓶颈。 |
+| [`code-review-deep-zh`](./skills/skills/code-review-deep-zh/SKILL.md) | Claude + Codex | 执行十维度中文深度代码审查。 |
+| [`code-vibe-workflow`](./skills/skills/code-vibe-workflow/SKILL.md) | Claude + Codex | 推进需求到提交的完整开发闭环。 |
+| [`design-pattern-advisor`](./skills/skills/design-pattern-advisor/SKILL.md) | Claude + Codex | 判断是否需要设计模式，并给出最小实现。 |
+| [`codebase-diagrams`](./skills/skills/codebase-diagrams/SKILL.md) | Claude + Codex | 生成项目、模块和方法级 Mermaid 图集。 |
 
 ### 写作与扩展
 
 | Skill | 宿主 | 用途 |
 |---|---|---|
-| [`naturalize-zh`](./.claude/skills/naturalize-zh/SKILL.md) | Claude + Codex | 去除中文文本中的机器化表达。 |
-| [`skill-creator-guide`](./.claude/skills/skill-creator-guide/SKILL.md) | Claude + Codex | 通过对话生成结构清楚的 Skill 草稿。 |
-| [`ambitious`](./.claude/skills/ambitious/SKILL.md) | Claude + Codex | 把普通任务按高度、深度、广度改写成更有野心的方案，确认后再执行；仅手动调用。 |
-| [`chat-sync`](./.claude/skills/chat-sync/SKILL.md) | Claude + Codex | 把当前会话增量同步到 Markdown 文件的指定章节：原话逐字写入，AI 回复压成要点；仅手动调用。 |
+| [`naturalize-zh`](./skills/skills/naturalize-zh/SKILL.md) | Claude + Codex | 去除中文文本中的机器化表达。 |
+| [`skill-creator-guide`](./skills/skills/skill-creator-guide/SKILL.md) | Claude + Codex | 通过对话生成结构清楚的 Skill 草稿。 |
+| [`ambitious`](./skills/skills/ambitious/SKILL.md) | Claude + Codex | 把普通任务按高度、深度、广度改写成更有野心的方案，确认后再执行；仅手动调用。 |
+| [`chat-sync`](./skills/skills/chat-sync/SKILL.md) | Claude + Codex | 把当前会话增量同步到 Markdown 文件的指定章节：原话逐字写入，AI 回复压成要点；仅手动调用。 |
 
 ## 仓库结构
 

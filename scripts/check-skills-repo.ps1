@@ -29,17 +29,6 @@ $warnings = New-Object System.Collections.Generic.List[string]
 function Add-Failure { param([string] $Message) $script:failures.Add($Message) }
 function Add-Warning { param([string] $Message) $script:warnings.Add($Message) }
 
-function ConvertTo-NativePath {
-    <#
-      把登记表里以正斜杠书写的目录转成本机路径形式。
-      Windows 上 Join-Path 能直接处理正斜杠并输出反斜杠，无需额外处理。
-    #>
-    param([string] $Path)
-
-    if ([System.IO.Path]::DirectorySeparatorChar -eq '/') { return $Path }
-    return ($Path -replace '/', '\')
-}
-
 function Get-SkillMeta {
     <#
       读取 SKILL.md 的 YAML frontmatter，返回 HasFrontmatter / Name / Description / Keys。
@@ -70,37 +59,6 @@ function Get-SkillMeta {
     }
 }
 
-function Get-RelativeFileSet {
-    <#
-      返回技能目录下所有文件的相对路径集合（相对技能目录）。
-      evals/ 与 evaluation/ 属评测产物，不计入双宿主契约比对。
-    #>
-    param([string] $SkillDir)
-
-    if (-not (Test-Path -LiteralPath $SkillDir -PathType Container)) { return @() }
-
-    Get-ChildItem -LiteralPath $SkillDir -Recurse -File |
-        ForEach-Object { $_.FullName.Substring($SkillDir.Length).TrimStart('\', '/') -replace '\\', '/' } |
-        Where-Object { $_ -notmatch '^(evals|evaluation)/' } |
-        Sort-Object
-}
-
-function Test-SameFileContent {
-    param([string] $Left, [string] $Right)
-
-    if (-not (Test-Path -LiteralPath $Left -PathType Leaf)) { return $false }
-    if (-not (Test-Path -LiteralPath $Right -PathType Leaf)) { return $false }
-
-    $leftBytes = [System.IO.File]::ReadAllBytes($Left)
-    $rightBytes = [System.IO.File]::ReadAllBytes($Right)
-
-    if ($leftBytes.Length -ne $rightBytes.Length) { return $false }
-    for ($i = 0; $i -lt $leftBytes.Length; $i++) {
-        if ($leftBytes[$i] -ne $rightBytes[$i]) { return $false }
-    }
-    return $true
-}
-
 # ---------------------------------------------------------------- 1. 登记表
 
 $registry = $null
@@ -121,21 +79,19 @@ if ($registry) { $registryNames = @($registry.skills | ForEach-Object { $_.name 
 
 # ---------------------------------------------------------------- 2. 目录存在性
 
-$hostDirs = @()
-if ($registry) {
-    foreach ($property in $registry.hosts.PSObject.Properties) {
-        $hostDirs += [pscustomobject]@{ Host = $property.Name; Path = Join-Path $repoRoot (ConvertTo-NativePath $property.Value) }
-    }
-}
-
-foreach ($hostDir in $hostDirs) {
-    if (-not (Test-Path -LiteralPath $hostDir.Path -PathType Container)) {
-        Add-Failure "宿主目录不存在：$($hostDir.Host) -> $($hostDir.Path)"
-    }
-}
-
 if (-not (Test-Path -LiteralPath $sourceOfTruth -PathType Container)) {
     Add-Failure '单一真源目录不存在：skills/skills'
+}
+
+# 宿主目录只保留空壳：技能一律放真源，放回这里就又回到了两套各自维护
+foreach ($hostDir in @('.claude/skills', '.codex/skills')) {
+    $hostPath = Join-Path $repoRoot $hostDir
+    if (-not (Test-Path -LiteralPath $hostPath -PathType Container)) { continue }
+    foreach ($item in Get-ChildItem -LiteralPath $hostPath -Force) {
+        if ($item.Name -ne '.gitkeep') {
+            Add-Failure "$hostDir 应为空目录（只留 .gitkeep），技能请放 skills/skills：发现 $($item.Name)"
+        }
+    }
 }
 
 # ---------------------------------------------------------------- 3. 真源逐技能契约
@@ -167,9 +123,24 @@ if (Test-Path -LiteralPath $sourceOfTruth -PathType Container) {
             Add-Failure "[$name] name 不是 kebab-case：'$($meta.Name)'"
         }
 
-        $unexpectedKeys = @($meta.Keys | Where-Object { $_ -ne 'name' -and $_ -ne 'description' })
+        # argument-hint 与 disable-model-invocation 只有 Claude Code 认，Codex 加载时会忽略，因此允许出现
+        $allowedKeys = @('name', 'description', 'argument-hint', 'disable-model-invocation')
+        $unexpectedKeys = @($meta.Keys | Where-Object { $_ -notin $allowedKeys })
         if ($unexpectedKeys.Count -gt 0) {
             Add-Failure "[$name] frontmatter 含未支持的键：$($unexpectedKeys -join ', ')"
+        }
+
+        # 仅手动调用必须两个宿主一起关：Claude 看 frontmatter，Codex 看 agents/openai.yaml
+        $frontmatter = [regex]::Match((Get-Content -LiteralPath $skillMd -Raw -Encoding UTF8), '(?s)\A---\s*\r?\n(.*?)\r?\n---').Groups[1].Value
+        $claudeManual = $frontmatter -match '(?m)^disable-model-invocation:\s*true\s*$'
+        $openaiYaml = Join-Path $skillDir 'agents/openai.yaml'
+        $codexManual = (Test-Path -LiteralPath $openaiYaml -PathType Leaf) -and
+            ((Get-Content -LiteralPath $openaiYaml -Raw -Encoding UTF8) -match '(?m)^\s*allow_implicit_invocation:\s*false\s*$')
+        if ($claudeManual -and -not $codexManual) {
+            Add-Failure "[$name] 有 disable-model-invocation: true，但 agents/openai.yaml 没设 allow_implicit_invocation: false，Codex 仍会自动触发"
+        }
+        elseif ($codexManual -and -not $claudeManual) {
+            Add-Failure "[$name] agents/openai.yaml 关了自动触发，但 frontmatter 没有 disable-model-invocation: true，Claude Code 仍会自动触发"
         }
 
         $descLength = $meta.Description.Length
@@ -193,45 +164,10 @@ if (Test-Path -LiteralPath $sourceOfTruth -PathType Container) {
         }
     }
 
-    # 宿主定制技能只存在于镜像，因此其契约检查在镜像上执行
-    if ($registry) {
-        foreach ($entry in $registry.skills | Where-Object { $_.hostSpecific }) {
-            foreach ($hostDir in $hostDirs) {
-                $hostSkillDir = Join-Path $hostDir.Path $entry.name
-                $skillMd = Join-Path $hostSkillDir 'SKILL.md'
-                if (-not (Test-Path -LiteralPath $skillMd -PathType Leaf)) {
-                    Add-Failure "[$($entry.name)] $($hostDir.Host) 缺 SKILL.md"
-                    continue
-                }
-
-                $meta = Get-SkillMeta -SkillMdPath $skillMd
-
-                if ($meta.Name -ne $entry.name) {
-                    Add-Failure "[$($entry.name)] $($hostDir.Host) frontmatter name='$($meta.Name)' 与目录名不一致"
-                }
-                if ($meta.Description.Length -lt $MinDescriptionChars) {
-                    Add-Failure "[$($entry.name)] $($hostDir.Host) description 仅 $($meta.Description.Length) 字符，触发信息不足"
-                }
-                elseif ($meta.Description.Length -gt $MaxDescriptionChars) {
-                    Add-Failure "[$($entry.name)] $($hostDir.Host) description $($meta.Description.Length) 字符，超出上限 $MaxDescriptionChars"
-                }
-                if ($meta.Description -notmatch 'not for|do not use|不要用于|不要触发|不适用') {
-                    Add-Failure "[$($entry.name)] $($hostDir.Host) description 未写明不适用边界"
-                }
-            }
-        }
-    }
-
     if ($registry) {
         foreach ($entry in $registry.skills) {
             if ($entry.name -notin $sourceSkillNames) {
-                # 宿主定制技能的正文本就按宿主不同，允许只存在于镜像。
-                if (-not $entry.hostSpecific) {
-                    Add-Failure "[$($entry.name)] 登记表有条目但真源目录不存在"
-                }
-            }
-            elseif ($entry.hostSpecific) {
-                Add-Failure "[$($entry.name)] 标记为 hostSpecific 却出现在真源：真源只应收敛宿主中立的内容"
+                Add-Failure "[$($entry.name)] 登记表有条目但真源目录不存在"
             }
         }
     }
@@ -293,61 +229,6 @@ if ($registry) {
             $relative = "tests/$($testFile.Name)"
             if ($relative -notin $declaredTests) {
                 Add-Warning "契约测试 $relative 存在，但没有任何技能在登记表 tests 字段中引用它"
-            }
-        }
-    }
-}
-
-# ---------------------------------------------------------------- 5. 双宿主与真源一致
-
-if ($hostDirs.Count -ge 1 -and (Test-Path -LiteralPath $sourceOfTruth -PathType Container)) {
-    foreach ($name in $sourceSkillNames) {
-        $sourceDir = Join-Path $sourceOfTruth $name
-        $sourceFiles = Get-RelativeFileSet -SkillDir $sourceDir
-
-        foreach ($hostDir in $hostDirs) {
-            $mirrorDir = Join-Path $hostDir.Path $name
-            if (-not (Test-Path -LiteralPath $mirrorDir -PathType Container)) {
-                Add-Failure "[$name] $($hostDir.Host) 缺该技能目录"
-                continue
-            }
-
-            $mirrorFiles = Get-RelativeFileSet -SkillDir $mirrorDir
-
-            foreach ($file in @($sourceFiles | Where-Object { $_ -notin $mirrorFiles })) {
-                Add-Failure "[$name] 真源有而 $($hostDir.Host) 缺：$file"
-            }
-            foreach ($file in @($mirrorFiles | Where-Object { $_ -notin $sourceFiles })) {
-                Add-Failure "[$name] $($hostDir.Host) 多出真源没有的文件：$file"
-            }
-
-            # 同名文件必须内容一致（evals/evaluation 已排除）；
-            # 宿主定制技能只校验文件集合，不校验正文。
-            $entryMeta = if ($registry) { $registry.skills | Where-Object { $_.name -eq $name } } else { $null }
-            if ($entryMeta -and $entryMeta.hostSpecific) { continue }
-
-            foreach ($file in @($sourceFiles | Where-Object { $_ -in $mirrorFiles })) {
-                $left = Join-Path $sourceDir $file
-                $right = Join-Path $mirrorDir $file
-                if (-not (Test-SameFileContent -Left $left -Right $right)) {
-                    Add-Failure "[$name] $($hostDir.Host) 与真源内容不一致：$file"
-                }
-            }
-        }
-    }
-
-    # 镜像里多出的技能必须是登记为宿主定制的，否则说明真源缺了它
-    foreach ($hostDir in $hostDirs) {
-        if (-not (Test-Path -LiteralPath $hostDir.Path -PathType Container)) { continue }
-        foreach ($mirror in Get-ChildItem -LiteralPath $hostDir.Path -Directory) {
-            if ($mirror.Name -in $sourceSkillNames) { continue }
-
-            $mirrorEntry = if ($registry) { $registry.skills | Where-Object { $_.name -eq $mirror.Name } } else { $null }
-            if (-not $mirrorEntry) {
-                Add-Failure "[$($mirror.Name)] $($hostDir.Host) 存在但真源没有该技能，且未登记在 skills/registry/skills.json"
-            }
-            elseif (-not $mirrorEntry.hostSpecific) {
-                Add-Failure "[$($mirror.Name)] 只存在于镜像、真源缺失，但未标记 hostSpecific"
             }
         }
     }
@@ -502,5 +383,5 @@ if ($effectiveFailureCount -gt 0) {
 }
 
 Write-Output ''
-Write-Output "技能库校验通过：$($sourceSkillNames.Count) 个技能、$($hostDirs.Count) 个宿主目录、$($warnings.Count) 项提醒。"
+Write-Output "技能库校验通过：$($sourceSkillNames.Count) 个技能、$($warnings.Count) 项提醒。"
 exit 0

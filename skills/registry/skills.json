@@ -3,15 +3,11 @@
   "registryVersion": 1,
   "updatedAt": "2026-11-10",
   "conventions": {
-    "sourceDir": "宿主中立技能的单一真源：skills/skills/<name>/。改动只改源，再跑 scripts/sync-skills.ps1 同步到 .claude/skills 与 .codex/skills。",
-    "hostSpecific": "标记为 true 的技能，其正文按宿主不同（.claude 版写 Claude Code / AskUserQuestion，.codex 版写 Codex / request_user_input），因此不设单一真源，只做逐宿主契约校验；这类技能只存在于镜像目录。",
+    "sourceDir": "所有技能的单一真源：skills/skills/<name>/。仓库里的 .claude/skills 与 .codex/skills 只保留空目录（.gitkeep），不放任何技能；本机通过 npx skills add -g 安装使用。",
+    "hostNeutral": "每个技能只有一份正文，同时服务 Claude Code 与 Codex：宿主差异写进正文（如提问工具写成「Claude Code 用 AskUserQuestion，Codex 用 request_user_input」）；仅手动调用的技能同时带 frontmatter 的 disable-model-invocation（Claude）与 agents/openai.yaml 的 policy.allow_implicit_invocation: false（Codex）。",
     "maturity": "stub=仅有 SKILL.md 骨架、无 references/assets；beta=有 references 或资产但无 eval 覆盖；stable=SKILL.md + 支撑文件 + evals 齐备。",
     "descriptionRange": "description 字符数允许区间（40-1200），CI 按此校验。",
     "lifecycle": "对应 .docs 软件研发生命周期的二级活动目录编号（如 41 = 41-代码编写），多阶段用数组。"
-  },
-  "hosts": {
-    "claude-code": ".claude/skills",
-    "codex": ".codex/skills"
   },
   "skills": [
     {
@@ -22,8 +18,7 @@
       ],
       "maturity": "stable",
       "evals": "evals/evals.json + evals/trigger-eval.json",
-      "notes": "code-read-deep-* 家族按容器粒度分工：方法 / 文件 / 模块 / 项目，另加横切线索 trace 与单次变更 change。",
-      "hostSpecific": true
+      "notes": "code-read-deep-* 家族按容器粒度分工：方法 / 文件 / 模块 / 项目，另加横切线索 trace 与单次变更 change。"
     },
     {
       "name": "code-read-deep-file",
@@ -32,8 +27,7 @@
         "41"
       ],
       "maturity": "stable",
-      "evals": "evals/evals.json + evals/trigger-eval.json",
-      "hostSpecific": true
+      "evals": "evals/evals.json + evals/trigger-eval.json"
     },
     {
       "name": "code-read-deep-module",
@@ -43,8 +37,7 @@
         "31"
       ],
       "maturity": "stable",
-      "evals": "evals/evals.json + evals/trigger-eval.json",
-      "hostSpecific": true
+      "evals": "evals/evals.json + evals/trigger-eval.json"
     },
     {
       "name": "code-read-deep-project",
@@ -54,8 +47,7 @@
         "31"
       ],
       "maturity": "stable",
-      "evals": "evals/evals.json + evals/trigger-eval.json",
-      "hostSpecific": true
+      "evals": "evals/evals.json + evals/trigger-eval.json"
     },
     {
       "name": "code-read-deep-trace",
@@ -65,8 +57,7 @@
         "31"
       ],
       "maturity": "stable",
-      "evals": "evals/evals.json + evals/trigger-eval.json",
-      "hostSpecific": true
+      "evals": "evals/evals.json + evals/trigger-eval.json"
     },
     {
       "name": "code-read-deep-change",
@@ -76,8 +67,7 @@
         "43"
       ],
       "maturity": "stable",
-      "evals": "evals/evals.json + evals/trigger-eval.json",
-      "hostSpecific": true
+      "evals": "evals/evals.json + evals/trigger-eval.json"
     },
     {
       "name": "code-vibe-workflow",
@@ -280,19 +270,17 @@
       ],
       "maturity": "stable",
       "evals": "evals/evals.json + evals/trigger-eval.json + fixtures",
-      "notes": "description 中曾引用的 `interviewer-doc-review` 已修正为 code-review-deep-zh（提交 7262a09）。",
-      "hostSpecific": true
+      "notes": "description 中曾引用的 `interviewer-doc-review` 已修正为 code-review-deep-zh（提交 7262a09）。"
     },
     {
       "name": "skill-creator-guide",
-      "summary": "通过对话引导用户创建新的 Claude Code skill：先定级别与用途，再生成草稿。",
+      "summary": "通过对话引导用户创建新的 skill（Claude Code / Codex 通用）：先定级别与用途，再生成草稿。",
       "lifecycle": [
         "00"
       ],
       "maturity": "beta",
       "evals": "missing",
-      "hostSpecific": true,
-      "notes": "与宿主内置 skill-creator 近义重名，存在路由冲突与安装覆盖风险；缺 evals；SKILL.md 文本按宿主定制（.codex 版写 Codex），故不进真源。"
+      "notes": "与宿主内置 skill-creator 近义重名，存在路由冲突与安装覆盖风险；缺 evals。"
     },
     {
       "name": "ambitious",
@@ -302,8 +290,7 @@
       ],
       "maturity": "stable",
       "evals": "evals/evals.json + evals/trigger-eval.json",
-      "hostSpecific": true,
-      "notes": "仅手动调用：Claude 版靠 frontmatter 的 disable-model-invocation，Codex 版靠 agents/openai.yaml 的 policy.allow_implicit_invocation: false；两边 frontmatter 与确认工具（AskUserQuestion / request_user_input）不同，故不进真源。trigger-eval 正例只收显式调用（/ambitious、$ambitious），负例用来确认普通请求不被接管，不跑基于 description 的自动路由评测。SKILL.md 不足 120 行，无 references。契约测试只在本地保留（tests/ 被 gitignore，未提交），故不登记 tests 字段。"
+      "notes": "仅手动调用：Claude Code 靠 frontmatter 的 disable-model-invocation，Codex 靠 agents/openai.yaml 的 policy.allow_implicit_invocation: false；同一份正文写明两种调用（/ambitious、$ambitious）与两种提问工具。trigger-eval 正例只收显式调用（/ambitious、$ambitious），负例用来确认普通请求不被接管，不跑基于 description 的自动路由评测。SKILL.md 不足 120 行，无 references。契约测试只在本地保留（tests/ 被 gitignore，未提交），故不登记 tests 字段。"
     },
     {
       "name": "chat-sync",
@@ -313,8 +300,7 @@
       ],
       "maturity": "stable",
       "evals": "evals/evals.json + evals/trigger-eval.json",
-      "hostSpecific": true,
-      "notes": "仅手动调用：Claude 版靠 frontmatter 的 disable-model-invocation，Codex 版靠 agents/openai.yaml 的 policy.allow_implicit_invocation: false。两版各带一份 scripts/Sync-Chat.ps1，同名不同实现：Claude 版解析 ~/.claude/projects/*/<会话ID>.jsonl，Codex 版解析 $CODEX_HOME/sessions 下的 rollout（只支持 paginated 格式）；章节定位、渲染、打码与增量标记逻辑两份各写一遍，修改时必须两处同步，契约测试会比对两份共用函数是否一致。trigger-eval 正例只收显式调用（/chat-sync、$chat-sync），不跑基于 description 的自动路由评测。SKILL.md 不足 120 行，输出格式由脚本固定，无 references/assets。契约测试只在本地保留（tests/ 被 gitignore，未提交），故不登记 tests 字段。"
+      "notes": "仅手动调用：Claude Code 靠 frontmatter 的 disable-model-invocation，Codex 靠 agents/openai.yaml 的 policy.allow_implicit_invocation: false。只有一份 scripts/Sync-Chat.ps1：-SyncHost claude 解析 ~/.claude/projects/*/<会话ID>.jsonl，-SyncHost codex 解析 $CODEX_HOME/sessions 下的 rollout（只支持 paginated 格式），缺省 auto 按 CLAUDE_CODE_SESSION_ID / CODEX_THREAD_ID 判断；章节定位、渲染、打码与增量标记逻辑两边共用。trigger-eval 正例只收显式调用（/chat-sync、$chat-sync），不跑基于 description 的自动路由评测。SKILL.md 不足 120 行，输出格式由脚本固定，无 references/assets。契约测试只在本地保留（tests/ 被 gitignore，未提交），故不登记 tests 字段。"
     },
     {
       "name": "release-readiness",
