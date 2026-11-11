@@ -1,17 +1,17 @@
 ---
 name: chat-sync
-description: 把当前会话的对话增量同步到用户指定 Markdown 文件里的指定标题（章节）下：用户发的话逐字写入（只把疑似密钥、令牌、口令打码），AI 的回复压缩成要点。用户输入 /chat-sync <文件> <标题路径>（Claude Code）或 $chat-sync <文件> <标题路径>（Codex）时使用，仅手动调用。不要用于：① 只想让 AI 总结或回顾刚才聊了什么、不写文件（直接回答）；② 把对话导出成 Word 或 PDF（用 docx / pdf）；③ 把讨论结论整理成正式的调研或设计文档（用 research）；④ 多步骤任务的计划与进度跟踪（用 planning-with-files-zh）。
+description: 把当前会话的对话增量同步到用户指定 Markdown 文件里的指定标题（章节）下：用户发的话逐字写入（只把疑似密钥、令牌、口令打码），AI 的回复压缩成要点。用户输入 /chat-sync <文件> <标题路径>（Claude Code、DeepSeek Harness）、$chat-sync <文件> <标题路径>（Codex）或 /skill:chat-sync <文件> <标题路径>（pi）时使用，仅手动调用。不要用于：① 只想让 AI 总结或回顾刚才聊了什么、不写文件（直接回答）；② 把对话导出成 Word 或 PDF（用 docx / pdf）；③ 把讨论结论整理成正式的调研或设计文档（用 research）；④ 多步骤任务的计划与进度跟踪（用 planning-with-files-zh）。
 argument-hint: <文件路径> <标题路径，如 项目A/讨论记录>
 disable-model-invocation: true
 ---
 
 # 同步对话到 Markdown
 
-用户的输入：用户在 `/chat-sync`（Claude Code）或 `$chat-sync`（Codex）后面写的内容。Claude Code 会把这段内容附在本文末尾的 `ARGUMENTS:` 之后。
+用户的输入：用户在 `/chat-sync`（Claude Code、DeepSeek Harness）、`$chat-sync`（Codex）或 `/skill:chat-sync`（pi）后面写的内容。Claude Code 会把这段内容附在本文末尾的 `ARGUMENTS:` 之后；其他宿主里，它就在用户那条消息里。
 
 把当前会话里还没同步过的对话，追加到目标文件指定章节的末尾。用户的原话逐字写入，AI 回复压成要点。读记录、定位章节、打码、写入都由 `scripts/Sync-Chat.ps1` 完成。你只负责拆参数、压缩 AI 回复和转述结果，不要自己动手编辑目标文件。
 
-下文的「提问工具」指宿主的交互式提问工具：Claude Code 用 AskUserQuestion，Codex 用 request_user_input。命令里的 `<skill-dir>` 是本 SKILL.md 所在的目录（Claude Code 里是 `${CLAUDE_SKILL_DIR}`）。
+下文的「提问工具」指宿主的交互式提问工具：Claude Code 用 AskUserQuestion，Codex 用 request_user_input，DeepSeek Harness 用 ask_user_question。pi 没有提问工具，就在回复里列出选项直接问用户，等用户回答后再继续。命令里的 `<skill-dir>` 是本 SKILL.md 所在的目录（Claude Code 里是 `${CLAUDE_SKILL_DIR}`，其他宿主载入本技能时会给出它的位置）。
 
 ## 第一步：拆参数
 
@@ -28,6 +28,12 @@ pwsh -NoProfile -File '<skill-dir>/scripts/Sync-Chat.ps1' -Mode Export -SyncHost
 
 # Codex：脚本通过 Codex 注入的环境变量 CODEX_THREAD_ID 找到当前会话，不需要另外传会话 ID
 pwsh -NoProfile -File '<skill-dir>/scripts/Sync-Chat.ps1' -Mode Export -SyncHost codex -File '<文件>' -Heading '<标题路径>'
+
+# pi：脚本通过 pi 注入的环境变量 PI_SESSION_ID、PI_SESSION_FILE 找到当前会话
+pwsh -NoProfile -File '<skill-dir>/scripts/Sync-Chat.ps1' -Mode Export -SyncHost pi -File '<文件>' -Heading '<标题路径>'
+
+# DeepSeek Harness：脚本通过环境变量 DSH_SESSION_ID 找到当前会话；压缩的记录由 scripts/read-dsh-session.mjs 用 Node.js 解压
+pwsh -NoProfile -File '<skill-dir>/scripts/Sync-Chat.ps1' -Mode Export -SyncHost dsh -File '<文件>' -Heading '<标题路径>'
 ```
 
 按退出码处理：
@@ -55,7 +61,7 @@ pwsh -NoProfile -File '<skill-dir>/scripts/Sync-Chat.ps1' -Mode Export -SyncHost
 pwsh -NoProfile -File '<skill-dir>/scripts/Sync-Chat.ps1' -Mode Write -ExportFile '<导出文件>'
 ```
 
-宿主由导出文件决定，这一步两边命令相同。在 Codex 里，目标文件不在可写的工作区时沙箱会拦住写入，按 Codex 的审批流程申请提权后重跑这条命令。
+宿主由导出文件决定，这一步各宿主命令相同。在 Codex 里，目标文件不在可写的工作区时沙箱会拦住写入，按 Codex 的审批流程申请提权后重跑这条命令。
 
 - **0**：把脚本的报告转述给用户，包括写到了哪个文件和章节、新增了几轮、新建了哪些文件或标题、哪几轮打了码。
 - **4**：目标章节在这次导出之后又被同步过。回到第二步重新导出。
@@ -65,7 +71,8 @@ pwsh -NoProfile -File '<skill-dir>/scripts/Sync-Chat.ps1' -Mode Write -ExportFil
 
 下面这些规则由脚本执行，你不需要手工处理，回答用户的疑问时以此为准：
 
-- **同步范围**：只同步当前会话，从目标章节里本会话的隐藏标记 `<!-- chat-sync:<宿主>:<会话ID>:<位置> -->` 之后开始（宿主是 `claude` 或 `codex`）；章节里没有这个标记，就从会话开头写起。执行 /chat-sync 或 $chat-sync 的那一轮整轮跳过。
+- **同步范围**：只同步当前会话，从目标章节里本会话的隐藏标记 `<!-- chat-sync:<宿主>:<会话ID>:<位置> -->` 之后开始（宿主是 `claude`、`codex`、`pi` 或 `dsh`）；章节里没有这个标记，就从会话开头写起。执行 /chat-sync、$chat-sync 或 /skill:chat-sync 的那一轮整轮跳过。
+- **pi 的分支**：只同步当前分支。用 /tree 切换过分支、标记落在已离开的分支上时，从它与当前分支的分叉点之后续写，已经写进文件的旧分支内容保留不动，脚本会提示这一点。
 - **原话**：逐字放进代码块。如果原话里有反引号，围栏会自动加长。只有疑似密钥、令牌、口令会被替换成 `***REDACTED***`。
 - **收录哪些内容**：
   - 收录：直接输入的消息、AI 工作时的插话、提问工具里的回答（写成“问题 → 选项”）、`!` 命令（只记命令行）、中断（记为“[已中断]”）。
@@ -78,4 +85,6 @@ pwsh -NoProfile -File '<skill-dir>/scripts/Sync-Chat.ps1' -Mode Write -ExportFil
 - **记录本身的局限**：
   - 会话记录写入有延迟，个别回复的正文可能没写进记录。这种轮次只会有原话，没有 AI 要点。
   - Codex 只支持当前版本的 paginated 记录格式。旧的 legacy 格式和 `.jsonl.zst` 压缩记录都会直接报错。
-  - Codex 的改动文件只统计 apply_patch 这类文件变更，通过 shell 命令改的文件不在清单里。
+  - Codex 的改动文件只统计 apply_patch 这类文件变更，通过 shell 命令改的文件不在清单里。pi 和 DeepSeek Harness 只统计 edit、write 工具改的文件。
+  - pi 只支持第 3 版会话记录，提示模板（`/模板名`）在记录里已经展开，写入的是展开后的文本。
+  - DeepSeek Harness 只支持第 4 版会话记录。记录默认是 zstd 压缩的，解压要用 Node.js 22.15 或更新版本，找不到 node 时会直接报错。

@@ -30,6 +30,18 @@
       "name": "正常-Codex 下导出、压缩、写入三步走完",
       "prompt": "$chat-sync D:\\notes\\工作日志.md 项目A/讨论记录",
       "expected_output": "拆出文件 D:\\notes\\工作日志.md 和标题路径 项目A/讨论记录，用单引号传参运行本 skill 目录下的 scripts/Sync-Chat.ps1 -Mode Export -SyncHost codex（会话 ID 由脚本从 CODEX_THREAD_ID 读取，不传 ${CLAUDE_SESSION_ID}）。读导出文件，只给 ai 不为空的轮次写要点，规则同 Claude Code。随后运行 -Mode Write，并转述脚本报告。全程不直接编辑目标文件；目标在工作区外被沙箱拦住时，按审批流程申请提权后重跑。"
+    },
+    {
+      "id": 5,
+      "name": "正常-pi 下导出、压缩、写入，并处理分支切换提示",
+      "prompt": "/skill:chat-sync D:\\notes\\工作日志.md 项目A/讨论记录（这个 pi 会话上次同步后用 /tree 切换过分支）",
+      "expected_output": "拆出文件和标题路径，运行 Sync-Chat.ps1 -Mode Export -SyncHost pi（会话由脚本从 PI_SESSION_ID / PI_SESSION_FILE 找到，不传 ${CLAUDE_SESSION_ID}）。导出输出提示检测到分支切换、从分叉点之后续写时，把这一点转述给用户，说明已写入的旧分支内容不会被删改。压缩、写入两步规则同 Claude Code。缺参数或标题有歧义时，因为 pi 没有提问工具，直接在回复里列出选项问用户，等用户回答后再继续。"
+    },
+    {
+      "id": 6,
+      "name": "信息不足-DeepSeek Harness 下找不到 node",
+      "prompt": "/chat-sync docs/会议.md 需求评审（在 DeepSeek Harness 里，本机 PATH 上没有 node）",
+      "expected_output": "运行 Sync-Chat.ps1 -Mode Export -SyncHost dsh。脚本因为压缩记录需要 Node.js 22.15+ 解压而以退出码 2 结束，把这条错误原样告诉用户并停止，说明装好 Node.js 22.15 或更新版本后重试。不尝试自己解析或解压 .zstd 记录，不改用其他宿主的 -SyncHost，也不直接编辑目标文件。"
     }
   ]
 }

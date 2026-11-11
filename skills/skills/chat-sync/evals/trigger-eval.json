@@ -5,7 +5,8 @@
     "/chat-sync docs/meeting.md 需求评审",
     "/chat-sync \"D:\\My Notes\\周报.md\" 本周/与 AI 的讨论",
     "$chat-sync notes.md 讨论记录",
-    "$chat-sync D:\\kb\\chat-log.md 2026-11/chat-sync 设计"
+    "$chat-sync D:\\kb\\chat-log.md 2026-11/chat-sync 设计",
+    "/skill:chat-sync notes/pi-会话.md 讨论记录"
   ],
   "should_not_trigger": [
     "总结一下我们刚才聊了什么（直接回答，不需要技能）",

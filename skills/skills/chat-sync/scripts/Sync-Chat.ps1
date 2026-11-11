@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    chat-sync：把当前会话增量同步到 Markdown 文件的指定章节。Claude Code 与 Codex 共用。
+    chat-sync：把当前会话增量同步到 Markdown 文件的指定章节。Claude Code、Codex、pi 与 DeepSeek Harness 共用。
 
 .DESCRIPTION
     分两步运行，中间由模型把 AI 回复压缩成要点：
@@ -8,9 +8,13 @@
               写出临时 JSON：原话、AI 回复正文（都已打码）和改动的文件。
                 Claude Code：~/.claude/projects/*/<会话ID>.jsonl
                 Codex：$CODEX_HOME/sessions/**/rollout-*-<线程ID>*.jsonl（只支持 paginated 格式，读不了 .jsonl.zst）
+                pi：$PI_SESSION_FILE，或 ~/.pi/agent/sessions/**/*_<会话ID>.jsonl（树形记录，只取当前分支）
+                DeepSeek Harness：$DSH_HOME/sessions/*/<会话ID>/session.vN.jsonl[.zstd]
+                  （.zstd 由同目录的 read-dsh-session.mjs 用 Node.js 22.15+ 解压）
       Write   读取 Export 的 JSON 和模型写的要点 JSON，定位或逐级新建标题，追加到章节末尾，更新标记。
     原话逐字写进代码块，只把疑似密钥、令牌、口令替换成 ***REDACTED***。
-    执行 /chat-sync 或 $chat-sync 的那一轮整轮跳过。
+    执行 /chat-sync、$chat-sync 或 /skill:chat-sync 的那一轮整轮跳过。
+    pi 切换分支后，若增量标记落在已离开的分支上，从它与当前分支的分叉点之后续写。
 
 .PARAMETER Mode
     Export 或 Write。
@@ -19,12 +23,12 @@
 .PARAMETER Heading
     Export：标题路径，用 / 分隔层级，如 "项目A/讨论记录"；只写最后一级也行，但必须唯一。
 .PARAMETER SyncHost
-    claude、codex 或 auto（缺省）。auto 时按环境变量判断：只有 CLAUDE_CODE_SESSION_ID 是 claude，
-    只有 CODEX_THREAD_ID 是 codex，两个都有或都没有就报错，要求显式指定。
+    claude、codex、pi、dsh 或 auto（缺省）。auto 时按环境变量判断：CLAUDE_CODE_SESSION_ID 对应 claude，
+    CODEX_THREAD_ID 对应 codex，PI_SESSION_ID 对应 pi，DSH_SESSION_ID 对应 dsh；恰好有一个时取它，
+    一个都没有或有多个就报错，要求显式指定。
     Write 时取导出文件里记录的宿主；显式指定了却与导出文件不符则报错。
 .PARAMETER SessionId
-    Export：当前会话 ID（Codex 是线程 ID，也可写 -ThreadId）。
-    缺省时 claude 取 CLAUDE_CODE_SESSION_ID，codex 取 CODEX_THREAD_ID；
+    Export：当前会话 ID（Codex 是线程 ID，也可写 -ThreadId）。缺省时取该宿主对应的环境变量；
     codex 两者都没有时，按「同一工作目录、最新、主线程、最后一条用户消息调用了 $chat-sync」兜底查找。
 .PARAMETER Transcript
     Export：直接指定会话记录 JSONL，跳过查找（测试用）。
@@ -47,7 +51,7 @@ param(
     [string] $Mode,
     [string] $File,
     [string] $Heading,
-    [ValidateSet('auto', 'claude', 'codex')]
+    [ValidateSet('auto', 'claude', 'codex', 'pi', 'dsh')]
     [string] $SyncHost = 'auto',
     [Alias('ThreadId')]
     [string] $SessionId,
@@ -530,6 +534,304 @@ function Get-CodexSessionKey {
     $key
 }
 
+function Get-HeaderSessionKey {
+    # pi 和 DeepSeek Harness 的记录第一行都是带 id 的 session 头
+    param($Records)
+    $key = [string]$Records[0]['id']
+    if (-not $key) { $key = $SessionId }
+    if ($key -notmatch '^[0-9A-Za-z-]{8,64}$') { Stop-Sync 1 "会话 ID 格式不对：$key" }
+    $key
+}
+
+# ---------------------------------------------------------------- pi 会话记录
+
+function Find-PiTranscript {
+    if ($Transcript) {
+        if (-not (Test-Path -LiteralPath $Transcript -PathType Leaf)) { Stop-Sync 2 "会话记录不存在：$Transcript" }
+        return (Resolve-Path -LiteralPath $Transcript).Path
+    }
+    if (-not $SessionId) { Stop-Sync 2 '拿不到当前会话 ID：请传 -SessionId，或在 pi 里运行（环境变量 PI_SESSION_ID）' }
+    if ($SessionId -notmatch '^[0-9A-Za-z-]{8,64}$') { Stop-Sync 1 "会话 ID 格式不对：$SessionId" }
+    # pi 的 bash 工具会同时给出当前会话文件的路径
+    if ($env:PI_SESSION_FILE -and $SessionId -eq $env:PI_SESSION_ID -and (Test-Path -LiteralPath $env:PI_SESSION_FILE -PathType Leaf)) {
+        return (Resolve-Path -LiteralPath $env:PI_SESSION_FILE).Path
+    }
+    $agentDir = if ($env:PI_CODING_AGENT_DIR) { $env:PI_CODING_AGENT_DIR } else { Join-Path $HOME '.pi/agent' }
+    $roots = @($env:PI_CODING_AGENT_SESSION_DIR, (Join-Path $agentDir 'sessions')) | Where-Object { $_ }
+    $found = @($roots | ForEach-Object { Get-ChildItem -LiteralPath $_ -Recurse -File -Filter "*_$SessionId.jsonl" -ErrorAction SilentlyContinue })
+    if ($found.Count -eq 0) { Stop-Sync 2 "在 $($roots -join '、') 下找不到会话 $SessionId 的记录" }
+    ($found | Sort-Object LastWriteTimeUtc -Descending)[0].FullName
+}
+
+function Get-PiEvents {
+    # pi 的记录是一棵树：每条带 id/parentId，从最后一条往上走到根就是当前分支
+    param($Records, [string] $CursorFrom)
+    if (-not $Records.Count -or $Records[0]['type'] -ne 'session') { Stop-Sync 2 '记录第一行不是 session 头，不是 pi 会话文件' }
+    if ([string]$Records[0]['version'] -ne '3') { Stop-Sync 2 "只支持第 3 版 pi 会话记录，当前是：$($Records[0]['version'])" }
+
+    $byId = @{}
+    $leaf = $null
+    for ($i = 1; $i -lt $Records.Count; $i++) {
+        $r = $Records[$i]
+        if ($r -is [Collections.IDictionary] -and $r['id']) {
+            $byId[[string]$r['id']] = $r
+            $leaf = $r
+        }
+    }
+    $path = [Collections.Generic.List[object]]::new()
+    $index = @{}
+    for ($x = $leaf; $null -ne $x -and $path.Count -le $byId.Count; $x = $byId[[string]$x['parentId']]) {
+        $path.Insert(0, $x)
+    }
+    for ($k = 0; $k -lt $path.Count; $k++) { $index[[string]$path[$k]['id']] = $k }
+
+    $startIndex = 0
+    $note = $null
+    if ($CursorFrom -and $CursorFrom -ne 'start') {
+        if ($index.ContainsKey($CursorFrom)) {
+            $startIndex = $index[$CursorFrom] + 1
+        }
+        elseif ($byId.ContainsKey($CursorFrom)) {
+            # 标记落在已离开的分支上：沿它的祖先找到第一个仍在当前分支上的节点，从那之后续写
+            $startIndex = 0
+            $steps = 0
+            for ($x = $byId[$CursorFrom]; $null -ne $x -and $steps -le $byId.Count; $x = $byId[[string]$x['parentId']]) {
+                $steps++
+                if ($index.ContainsKey([string]$x['id'])) { $startIndex = $index[[string]$x['id']] + 1; break }
+            }
+            $note = '提示：检测到 pi 切换过分支，上次同步的位置不在当前分支上，从分叉点之后续写'
+        }
+        else {
+            Stop-Sync 1 "增量标记指向的位置 $CursorFrom 不在当前会话记录里"
+        }
+    }
+
+    $events = [Collections.Generic.List[object]]::new()
+    $add = {
+        param([string] $Kind, [string] $Text)
+        if ($emit) { $events.Add([pscustomobject]@{ Kind = $Kind; Text = $Text; Time = $time; Id = $id; PrevId = $prevId }) }
+    }
+    $cwd = [string]$Records[0]['cwd']
+    $prevId = $null
+    $lastId = $null
+    $prevRole = $null
+    for ($k = 0; $k -lt $path.Count; $k++) {
+        $r = $path[$k]
+        $id = [string]$r['id']
+        $emit = $k -ge $startIndex
+        $time = $r['timestamp']
+        $m = $r['message']
+        if ($r['type'] -eq 'message' -and $m -is [Collections.IDictionary]) {
+            switch ($m['role']) {
+                'user' {
+                    $content = $m['content']
+                    $text = Get-Text $content
+                    $images = Get-ImageCount $content
+                    # 工具结果之后紧跟的用户消息，是 pi 工作时插进来的话（steer）
+                    $kind = if ($prevRole -eq 'toolResult') { 'queued' } else { 'prompt' }
+                    # /skill:name 参数 会被展开成 <skill …>正文</skill> 再接参数，还原成用户打的那一行
+                    if ($text -cmatch '^<skill name="([^"]+)" location="[^"]+">\n[\s\S]*?\n</skill>(?:\n\n([\s\S]+))?\z') {
+                        $name = $Matches[1]
+                        $text = if ($Matches[2]) { "/skill:$name $($Matches[2])" } else { "/skill:$name" }
+                        if ($name -eq $SkillName) { $kind = 'sync' }
+                    }
+                    if ($images -gt 0) {
+                        $placeholder = (@('[图片]') * $images) -join ' '
+                        $text = if ($text) { "$placeholder`n$text" } else { $placeholder }
+                    }
+                    if ($text.Trim() -or $kind -eq 'sync') { & $add $kind $text }
+                }
+                'assistant' {
+                    foreach ($block in @($m['content'])) {
+                        if ($block -isnot [Collections.IDictionary]) { continue }
+                        if ($block['type'] -eq 'text' -and ([string]$block['text']).Trim()) {
+                            & $add 'ai' $block['text']
+                        }
+                        elseif ($block['type'] -eq 'toolCall' -and $block['name'] -in 'edit', 'write' -and $block['arguments'] -is [Collections.IDictionary]) {
+                            $target = [string]$block['arguments']['path']
+                            if ($target) { & $add 'file' (Format-FilePath $target $cwd) }
+                        }
+                    }
+                    if ($m['stopReason'] -eq 'aborted') { & $add 'interrupt' '' }
+                }
+                'bashExecution' {
+                    # !命令 进上下文，!!命令 不进
+                    $prefix = if ($m['excludeFromContext']) { '!!' } else { '!' }
+                    & $add 'command' "$prefix $($m['command'])"
+                }
+            }
+            $prevRole = $m['role']
+        }
+        if ($emit) { $lastId = $id }
+        $prevId = $id
+    }
+    [pscustomobject]@{ Events = $events; LastId = $lastId; Note = $note }
+}
+
+# ---------------------------------------------------------------- DeepSeek Harness 会话记录
+
+function Find-DshTranscript {
+    if ($Transcript) {
+        if (-not (Test-Path -LiteralPath $Transcript -PathType Leaf)) { Stop-Sync 2 "会话记录不存在：$Transcript" }
+        return (Resolve-Path -LiteralPath $Transcript).Path
+    }
+    if (-not $SessionId) { Stop-Sync 2 '拿不到当前会话 ID：请传 -SessionId，或在 DeepSeek Harness 里运行（环境变量 DSH_SESSION_ID）' }
+    if ($SessionId -notmatch '^[0-9A-Za-z-]{8,64}$') { Stop-Sync 1 "会话 ID 格式不对：$SessionId" }
+    $dshHome = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $HOME '.dsh' }
+    $sessions = Join-Path $dshHome 'sessions'
+    # 会话目录按项目分组：sessions/<项目>/<会话ID>/
+    $dirs = @(Get-ChildItem -LiteralPath $sessions -Directory -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-Item -LiteralPath (Join-Path $_.FullName $SessionId) -ErrorAction SilentlyContinue } |
+            Where-Object { $_ -and $_.PSIsContainer })
+    if ($dirs.Count -eq 0) { Stop-Sync 2 "在 $sessions 下找不到会话 $SessionId" }
+    $dir = ($dirs | Sort-Object LastWriteTimeUtc -Descending)[0].FullName
+    # 每次格式升级写出新一代 session.vN.jsonl[.zstd]，取版本最高的那份
+    $logs = @(Get-ChildItem -LiteralPath $dir -File | ForEach-Object {
+            if ($_.Name -cmatch '^session(?:\.v([1-9]\d*))?\.jsonl(?:\.zstd)?$') {
+                [pscustomobject]@{ Path = $_.FullName; Version = $(if ($Matches[1]) { [int]$Matches[1] } else { 0 }); Time = $_.LastWriteTimeUtc }
+            }
+        })
+    if ($logs.Count -eq 0) { Stop-Sync 2 "会话目录里没有 session*.jsonl 记录：$dir" }
+    ($logs | Sort-Object Version, Time -Descending)[0].Path
+}
+
+function Read-DshLog {
+    # 压缩的记录交给 Node 解压成临时明文，读完就删
+    param([string] $Path)
+    if (-not $Path.EndsWith('.zstd')) { return , (Read-JsonLines $Path) }
+    $node = Get-Command node -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $node) { Stop-Sync 2 'DeepSeek Harness 的会话记录是 zstd 压缩的，解压要用 Node.js 22.15 或更新版本，但没找到 node' }
+    $reader = Join-Path $PSScriptRoot 'read-dsh-session.mjs'
+    $plain = Join-Path (Join-Path ([IO.Path]::GetTempPath()) 'chat-sync') ('dsh-' + [IO.Path]::GetRandomFileName() + '.jsonl')
+    try {
+        $null = & $node.Source $reader $Path $plain
+        if ($LASTEXITCODE -ne 0) { Stop-Sync 2 "解压 DeepSeek Harness 会话记录失败（见上方 read-dsh-session 的报错）：$Path" }
+        $records = Read-JsonLines $plain
+    }
+    finally {
+        if (Test-Path -LiteralPath $plain -PathType Leaf) { Remove-Item -LiteralPath $plain -Force }
+    }
+    , $records
+}
+
+function ConvertFrom-JsonArgument {
+    # 工具参数和结果在记录里是 JSON 字符串；解析失败返回 $null
+    param($Value)
+    if ($Value -is [Collections.IDictionary]) { return $Value }
+    try { [string]$Value | ConvertFrom-Json @JsonArgs } catch { $null }
+}
+
+function Format-DshChoice {
+    # ask_user_question 的回答：每个问题一行「问题 → 选项, 自填内容」
+    param($Questions, $Answers)
+    $lines = foreach ($answer in @($Answers)) {
+        if ($answer -isnot [Collections.IDictionary]) { continue }
+        $question = @($Questions | Where-Object { $_ -is [Collections.IDictionary] -and $_['id'] -eq $answer['id'] })[0]
+        $values = @(@($answer['selected']) | Where-Object { $_ }) + @(@($answer['custom']) | Where-Object { $_ })
+        $label = if ($question) { $question['question'] } else { $answer['id'] }
+        "$label → $($values -join ', ')"
+    }
+    @($lines) -join "`n"
+}
+
+function Get-DshEvents {
+    # 按事件序号产出事件：用户侧（prompt/queued/choice/interrupt/sync）、ai 文本、改动文件
+    param($Records, [string] $CursorFrom)
+    if (-not $Records.Count -or $Records[0]['type'] -ne 'session') { Stop-Sync 2 '记录第一行不是 session 头，不是 DeepSeek Harness 会话记录' }
+    if ([string]$Records[0]['version'] -ne '4') { Stop-Sync 2 "只支持第 4 版 DeepSeek Harness 会话记录，当前是：$($Records[0]['version'])" }
+    $start = -1L
+    if ($CursorFrom -and $CursorFrom -ne 'start') {
+        if ($CursorFrom -notmatch '^\d+$') { Stop-Sync 1 "增量标记的位置不是事件序号：$CursorFrom" }
+        $start = [long]$CursorFrom
+    }
+
+    $events = [Collections.Generic.List[object]]::new()
+    $add = {
+        param([string] $Kind, [string] $Text)
+        if ($emit) { $events.Add([pscustomobject]@{ Kind = $Kind; Text = $Text; Time = $time; Id = $id; PrevId = $prevId }) }
+    }
+    $cwd = [string]$Records[0]['cwd']
+    $inTurn = $false
+    $steered = @{}
+    $questions = @{}
+    $prevId = $null
+    $lastId = $null
+    $maxSeq = -1L
+    for ($i = 1; $i -lt $Records.Count; $i++) {
+        $r = $Records[$i]
+        if ($null -eq $r['seq']) { continue }
+        $seq = [long]$r['seq']
+        $id = [string]$seq
+        $emit = $seq -gt $start
+        $time = $r['time']
+        $d = $r['data']
+        if ($d -is [Collections.IDictionary]) {
+            switch ([string]$r['type']) {
+                'turn/start' { $inTurn = $true }
+                'turn/end' {
+                    $inTurn = $false
+                    $reason = $d['reason']
+                    if ($reason -is [Collections.IDictionary] -and $reason['kind'] -in 'aborted', 'interrupted') { & $add 'interrupt' '' }
+                }
+                'agent/inbox/spliced' {
+                    # 回合进行中塞进「下一步」的用户消息，是 DeepSeek Harness 工作时插进来的话
+                    if ($inTurn -and $d['target'] -eq 'next-step') {
+                        foreach ($msg in @($d['inserted'])) {
+                            if ($msg -is [Collections.IDictionary] -and $msg['id']) { $steered[[string]$msg['id']] = $true }
+                        }
+                    }
+                }
+                'user/message' {
+                    # 只认用户亲手发的；运行时上下文、技能目录、技能正文注入等都不是
+                    $source = $d['source']
+                    if ($source -isnot [Collections.IDictionary] -or $source['kind'] -ne 'user') { break }
+                    $parts = @($d['content'])
+                    $text = Get-PartText ($parts | Where-Object { $_ -is [Collections.IDictionary] -and $_['type'] -eq 'text' })
+                    $images = @($parts | Where-Object { $_ -is [Collections.IDictionary] -and $_['type'] -eq 'image' }).Count
+                    $kind = if ($text -cmatch '(?:^|\s)/chat-sync(?=\s|$)') { 'sync' } elseif ($steered.ContainsKey([string]$d['id'])) { 'queued' } else { 'prompt' }
+                    if ($images -gt 0) {
+                        $placeholder = (@('[图片]') * $images) -join ' '
+                        $text = if ($text) { "$placeholder`n$text" } else { $placeholder }
+                    }
+                    if ($text.Trim() -or $kind -eq 'sync') { & $add $kind $text }
+                }
+                'assistant/message' {
+                    $message = $d['message']
+                    if ($message -isnot [Collections.IDictionary]) { break }
+                    foreach ($block in @($message['content'])) {
+                        if ($block -is [Collections.IDictionary] -and $block['type'] -eq 'text' -and ([string]$block['text']).Trim()) {
+                            & $add 'ai' $block['text']
+                        }
+                    }
+                }
+                'tool/call' {
+                    $callArgs = ConvertFrom-JsonArgument $d['arguments']
+                    if ($callArgs -isnot [Collections.IDictionary]) { break }
+                    if ($d['name'] -in 'edit', 'write' -and $callArgs['file_path']) {
+                        & $add 'file' (Format-FilePath ([string]$callArgs['file_path']) $cwd)
+                    }
+                    elseif ($d['name'] -eq 'ask_user_question') {
+                        $questions[[string]$d['callId']] = @($callArgs['questions'])
+                    }
+                }
+                'tool/result' {
+                    $message = $d['message']
+                    if ($message -isnot [Collections.IDictionary] -or -not $questions.ContainsKey([string]$message['toolCallId'])) { break }
+                    $answer = ConvertFrom-JsonArgument (Get-PartText $message['content'])
+                    if ($answer -is [Collections.IDictionary] -and $answer['answers']) {
+                        & $add 'choice' (Format-DshChoice $questions[[string]$message['toolCallId']] $answer['answers'])
+                    }
+                }
+            }
+        }
+        if ($emit) { $lastId = $id }
+        $prevId = $id
+        if ($seq -gt $maxSeq) { $maxSeq = $seq }
+    }
+    if ($start -gt $maxSeq) { Stop-Sync 1 "增量标记指向的位置 $start 不在当前会话记录里" }
+    [pscustomobject]@{ Events = $events; LastId = $lastId }
+}
+
 # ---------------------------------------------------------------- 组装轮次
 
 $TopLevelKinds = 'prompt', 'command', 'sync'
@@ -541,6 +843,10 @@ function Format-Time {
     if ($Value -is [datetime]) {
         $utc = if ($Value.Kind -eq [DateTimeKind]::Unspecified) { [datetime]::SpecifyKind($Value, [DateTimeKind]::Utc) } else { $Value }
         return $utc.ToLocalTime().ToString('yyyy-MM-dd HH:mm')
+    }
+    # DeepSeek Harness 记的是毫秒时间戳
+    if ($Value -is [long] -or $Value -is [int]) {
+        return [DateTimeOffset]::FromUnixTimeMilliseconds([long]$Value).ToLocalTime().ToString('yyyy-MM-dd HH:mm')
     }
     try {
         [DateTimeOffset]::Parse([string]$Value, [Globalization.CultureInfo]::InvariantCulture).ToLocalTime().ToString('yyyy-MM-dd HH:mm')
@@ -830,15 +1136,15 @@ function Format-Block {
 
 # ---------------------------------------------------------------- Export
 
+$HostEnv = [ordered]@{ claude = 'CLAUDE_CODE_SESSION_ID'; codex = 'CODEX_THREAD_ID'; pi = 'PI_SESSION_ID'; dsh = 'DSH_SESSION_ID' }
+
 function Resolve-SyncHost {
     if ($SyncHost -ne 'auto') { return $SyncHost }
-    $claude = [bool]$env:CLAUDE_CODE_SESSION_ID
-    $codex = [bool]$env:CODEX_THREAD_ID
-    if ($claude -and -not $codex) { return 'claude' }
-    if ($codex -and -not $claude) { return 'codex' }
-    # 一个宿主里启动了另一个宿主时，两个变量会同时继承下来，只能让调用方说清楚
-    $why = if ($claude) { '同时检测到 CLAUDE_CODE_SESSION_ID 和 CODEX_THREAD_ID' } else { '没有检测到 CLAUDE_CODE_SESSION_ID 或 CODEX_THREAD_ID' }
-    Stop-Sync 1 "判断不出当前宿主（$why），请用 -SyncHost claude 或 -SyncHost codex 指定"
+    $present = @($HostEnv.Keys | Where-Object { [Environment]::GetEnvironmentVariable($HostEnv[$_]) })
+    if ($present.Count -eq 1) { return $present[0] }
+    # 一个宿主里启动了另一个宿主时，变量会一起继承下来，只能让调用方说清楚
+    $why = if ($present.Count) { '同时检测到 ' + (@($present | ForEach-Object { $HostEnv[$_] }) -join '、') } else { '没有检测到 ' + (@($HostEnv.Values) -join '、') + ' 中的任何一个' }
+    Stop-Sync 1 "判断不出当前宿主（$why），请用 -SyncHost claude、codex、pi 或 dsh 指定"
 }
 
 function Invoke-Export {
@@ -851,14 +1157,20 @@ function Invoke-Export {
     if ($segments.Count -eq 0) { Stop-Sync 1 "标题路径为空：$Heading" }
 
     $script:SyncHost = Resolve-SyncHost
-    if (-not $SessionId) {
-        $script:SessionId = if ($SyncHost -eq 'claude') { $env:CLAUDE_CODE_SESSION_ID } else { $env:CODEX_THREAD_ID }
+    if (-not $SessionId) { $script:SessionId = [Environment]::GetEnvironmentVariable($HostEnv[$SyncHost]) }
+    $transcriptPath = switch ($SyncHost) {
+        'claude' { Find-ClaudeTranscript }
+        'codex' { Find-CodexTranscript }
+        'pi' { Find-PiTranscript }
+        'dsh' { Find-DshTranscript }
     }
-    $isClaude = $SyncHost -eq 'claude'
-    $transcriptPath = if ($isClaude) { Find-ClaudeTranscript } else { Find-CodexTranscript }
-    $records = Read-JsonLines $transcriptPath
+    $records = if ($SyncHost -eq 'dsh') { Read-DshLog $transcriptPath } else { Read-JsonLines $transcriptPath }
     if (-not $records.Count) { Stop-Sync 2 "会话记录是空的：$transcriptPath" }
-    $session = if ($isClaude) { Get-ClaudeSessionKey $transcriptPath } else { Get-CodexSessionKey $records }
+    $session = switch ($SyncHost) {
+        'claude' { Get-ClaudeSessionKey $transcriptPath }
+        'codex' { Get-CodexSessionKey $records }
+        default { Get-HeaderSessionKey $records }
+    }
 
     $cursorFrom = $null
     if (Test-Path -LiteralPath $target -PathType Leaf) {
@@ -872,7 +1184,12 @@ function Invoke-Export {
         }
     }
 
-    $parsed = if ($isClaude) { Get-ClaudeEvents $records $cursorFrom } else { Get-CodexEvents $records $cursorFrom }
+    $parsed = switch ($SyncHost) {
+        'claude' { Get-ClaudeEvents $records $cursorFrom }
+        'codex' { Get-CodexEvents $records $cursorFrom }
+        'pi' { Get-PiEvents $records $cursorFrom }
+        'dsh' { Get-DshEvents $records $cursorFrom }
+    }
     $built = Build-Units $parsed.Events $parsed.LastId $cursorFrom
     foreach ($unit in $built.Units) {
         $user = Protect-Secret $unit.user
@@ -912,6 +1229,7 @@ function Invoke-Export {
     Write-Output "要点文件：$summaryPath"
     Write-Output "新轮次：$($built.Units.Count) 轮；需要压缩 AI 回复的轮次：$(if ($needs.Count) { $needs -join ', ' } else { '无' })"
     if ($built.Orphans) { Write-Output "提示：有 $($built.Orphans) 段 AI 回复前面没有用户输入，已忽略" }
+    if ($parsed.PSObject.Properties['Note'] -and $parsed.Note) { Write-Output $parsed.Note }
 }
 
 # ---------------------------------------------------------------- Write
@@ -920,7 +1238,7 @@ function Invoke-Write {
     if (-not $ExportFile -or -not (Test-Path -LiteralPath $ExportFile -PathType Leaf)) { Stop-Sync 1 "找不到导出文件：$ExportFile" }
     $export = Get-Content -LiteralPath $ExportFile -Raw -Encoding utf8 | ConvertFrom-Json @JsonArgs
     $exportHost = [string]$export['host']
-    if ($exportHost -notin 'claude', 'codex') { Stop-Sync 1 "导出文件里的宿主无法识别：$exportHost" }
+    if ($exportHost -notin $HostEnv.Keys) { Stop-Sync 1 "导出文件里的宿主无法识别：$exportHost" }
     if ($SyncHost -ne 'auto' -and $SyncHost -ne $exportHost) { Stop-Sync 1 "导出文件来自 $exportHost，不是 $SyncHost" }
     $script:SyncHost = $exportHost
     $session = [string]$export['sessionId']

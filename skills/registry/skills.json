@@ -300,7 +300,7 @@
       ],
       "maturity": "stable",
       "evals": "evals/evals.json + evals/trigger-eval.json",
-      "notes": "仅手动调用：Claude Code 靠 frontmatter 的 disable-model-invocation，Codex 靠 agents/openai.yaml 的 policy.allow_implicit_invocation: false。只有一份 scripts/Sync-Chat.ps1：-SyncHost claude 解析 ~/.claude/projects/*/<会话ID>.jsonl，-SyncHost codex 解析 $CODEX_HOME/sessions 下的 rollout（只支持 paginated 格式），缺省 auto 按 CLAUDE_CODE_SESSION_ID / CODEX_THREAD_ID 判断；章节定位、渲染、打码与增量标记逻辑两边共用。trigger-eval 正例只收显式调用（/chat-sync、$chat-sync），不跑基于 description 的自动路由评测。SKILL.md 不足 120 行，输出格式由脚本固定，无 references/assets。契约测试只在本地保留（tests/ 被 gitignore，未提交），故不登记 tests 字段。"
+      "notes": "仅手动调用：Claude Code 靠 frontmatter 的 disable-model-invocation，Codex 靠 agents/openai.yaml 的 policy.allow_implicit_invocation: false。只有一份 scripts/Sync-Chat.ps1：-SyncHost claude 解析 ~/.claude/projects/*/<会话ID>.jsonl，-SyncHost codex 解析 $CODEX_HOME/sessions 下的 rollout（只支持 paginated 格式），-SyncHost pi 解析 pi 的树形会话记录（只取当前分支，切换分支后从分叉点续写），-SyncHost dsh 解析 DeepSeek Harness 的 v4 事件记录（zstd 压缩的由 scripts/read-dsh-session.mjs 用 Node.js 22.15+ 解压）；缺省 auto 按 CLAUDE_CODE_SESSION_ID / CODEX_THREAD_ID / PI_SESSION_ID / DSH_SESSION_ID 判断，恰好一个时取它；章节定位、渲染、打码与增量标记逻辑各宿主共用。pi 与 DeepSeek Harness 同样认 disable-model-invocation。trigger-eval 正例只收显式调用（/chat-sync、$chat-sync、/skill:chat-sync），不跑基于 description 的自动路由评测。SKILL.md 不足 120 行，输出格式由脚本固定，无 references/assets。契约测试只在本地保留（tests/ 被 gitignore，未提交），故不登记 tests 字段。"
     },
     {
       "name": "release-readiness",
