@@ -3,7 +3,7 @@
     chat-sync：把当前会话增量同步到 Markdown 文件的指定章节。Claude Code、Codex、pi 与 DeepSeek Harness 共用。
 
 .DESCRIPTION
-    分两步运行，中间由模型把 AI 回复压缩成要点：
+    分两步运行，中间由模型把每轮的 AI 回复压缩成一段话：
       Export  读取当前会话记录，从目标章节里本会话的增量标记之后取出新轮次，
               写出临时 JSON：原话、AI 回复正文（都已打码）和改动的文件。
                 Claude Code：~/.claude/projects/*/<会话ID>.jsonl
@@ -12,7 +12,12 @@
                 DeepSeek Harness：$DSH_HOME/sessions/*/<会话ID>/session.vN.jsonl[.zstd]
                   （.zstd 由同目录的 read-dsh-session.mjs 用 Node.js 22.15+ 解压）
       Write   读取 Export 的 JSON 和模型写的要点 JSON，定位或逐级新建标题，追加到章节末尾，更新标记。
-    原话逐字写进代码块，只把疑似密钥、令牌、口令替换成 ***REDACTED***。
+    每轮写成一条编号问答，不记时间：
+      N. **问**：原话（插话写「插话」，! 命令写「命令」）
+         **答**：压缩后的回复，被中断时末尾标「（已中断）」
+         **选择**：短标题＝「选项」；…（提问工具里的回答，并入所在那一条）
+    编号接着章节里上一条往下加；章节里还没有问答时，先写一行标题「**对话记录**（问为原文，答为压缩后的回复）」。
+    原话逐字写入：单行接在「问」后面，多行放进代码块；只把疑似密钥、令牌、口令替换成 ***REDACTED***。
     执行 /chat-sync、$chat-sync 或 /skill:chat-sync 的那一轮整轮跳过。
     pi 切换分支后，若增量标记落在已离开的分支上，从它与当前分支的分叉点之后续写。
 
@@ -37,7 +42,7 @@
 .PARAMETER ExportFile
     Write：Export 写出的 JSON。
 .PARAMETER SummaryFile
-    Write：要点 JSON，形如 {"1": ["要点", ...]}，键是轮次 id；缺省用导出 JSON 里记录的路径。
+    Write：要点 JSON，形如 {"1": "压缩后的一段话"}，键是轮次 id；缺省用导出 JSON 里记录的路径。
 
 .NOTES
     需要 PowerShell 7+。
@@ -200,24 +205,31 @@ function ConvertTo-HumanEvent {
     }
     if ($Images -gt 0 -and $Text -notmatch '\[Image #') {
         $placeholder = (@('[图片]') * $Images) -join ' '
-        $Text = if ($Text) { "$placeholder`n$Text" } else { $placeholder }
+        $Text = if ($Text) { "$placeholder $Text" } else { $placeholder }
     }
     if (-not $Text.Trim()) { return $null }
     @{ Kind = $Kind; Text = $Text }
 }
 
+function Format-Choice {
+    # 一个问题的回答写成「短标题＝「选项」」，没有短标题时用问题原文；换行并成空格，各问题之间用换行分隔
+    param($Header, $Question, [string] $Answer, [string] $Note)
+    $label = if ([string]$Header) { [string]$Header } else { [string]$Question }
+    $text = "$label＝「$Answer」"
+    if ($Note) { $text += "（备注：$Note）" }
+    $text -replace '\s*\r?\n\s*', ' '
+}
+
 function Format-ClaudeChoice {
-    # AskUserQuestion 的回答：每个问题一行「问题 → 选择」，备注逐字附在下一行
+    # AskUserQuestion 的回答，备注接在选项后面
     param($Result)
     $notes = $Result['annotations']
     $lines = foreach ($q in @($Result['questions'])) {
         $question = [string]$q['question']
         $answer = $Result['answers'][$question]
         if ($null -eq $answer) { continue }
-        "$question → $answer"
-        if ($notes -is [Collections.IDictionary] -and $notes[$question] -is [Collections.IDictionary] -and $notes[$question]['notes']) {
-            "  备注：$($notes[$question]['notes'])"
-        }
+        $note = if ($notes -is [Collections.IDictionary] -and $notes[$question] -is [Collections.IDictionary]) { [string]$notes[$question]['notes'] } else { '' }
+        Format-Choice $q['header'] $question $answer $note
     }
     @($lines) -join "`n"
 }
@@ -390,14 +402,14 @@ function Remove-CodexWrapper {
 }
 
 function Format-CodexChoice {
-    # request_user_input 的回答：每个问题一行「问题 → 选择」
+    # request_user_input 的回答
     param($Questions, $Answers)
     $lines = foreach ($q in @($Questions)) {
         if ($q -isnot [Collections.IDictionary]) { continue }
         $entry = $Answers[[string]$q['id']]
         if ($null -eq $entry) { continue }
         $values = if ($entry -is [Collections.IDictionary]) { @($entry['answers']) } else { @($entry) }
-        "$($q['question']) → $(@($values) -join ', ')"
+        Format-Choice $q['header'] $q['question'] (@($values) -join ', ')
     }
     @($lines) -join "`n"
 }
@@ -406,7 +418,7 @@ function Format-Reply {
     # 异步提问的回答以 <send_user_message_question_reply>[{question, answer}] 的形式回到用户消息里
     param($Replies)
     $lines = foreach ($reply in @($Replies)) {
-        if ($reply -is [Collections.IDictionary]) { "$($reply['question']) → $(@($reply['answer']) -join ', ')" }
+        if ($reply -is [Collections.IDictionary]) { Format-Choice $null $reply['question'] (@($reply['answer']) -join ', ') }
     }
     @($lines) -join "`n"
 }
@@ -475,7 +487,7 @@ function Get-CodexEvents {
                         $clean = Remove-CodexWrapper $text
                         if ($images -gt 0) {
                             $placeholder = (@('[图片]') * $images) -join ' '
-                            $clean = if ($clean) { "$placeholder`n$clean" } else { $placeholder }
+                            $clean = if ($clean) { "$placeholder $clean" } else { $placeholder }
                         }
                         if ($clean.Trim() -or $kind -eq 'sync') { & $add $kind $clean }
                     }
@@ -637,7 +649,7 @@ function Get-PiEvents {
                     }
                     if ($images -gt 0) {
                         $placeholder = (@('[图片]') * $images) -join ' '
-                        $text = if ($text) { "$placeholder`n$text" } else { $placeholder }
+                        $text = if ($text) { "$placeholder $text" } else { $placeholder }
                     }
                     if ($text.Trim() -or $kind -eq 'sync') { & $add $kind $text }
                 }
@@ -722,14 +734,14 @@ function ConvertFrom-JsonArgument {
 }
 
 function Format-DshChoice {
-    # ask_user_question 的回答：每个问题一行「问题 → 选项, 自填内容」
+    # ask_user_question 的回答：选中的选项和自填内容放在一起
     param($Questions, $Answers)
     $lines = foreach ($answer in @($Answers)) {
         if ($answer -isnot [Collections.IDictionary]) { continue }
         $question = @($Questions | Where-Object { $_ -is [Collections.IDictionary] -and $_['id'] -eq $answer['id'] })[0]
         $values = @(@($answer['selected']) | Where-Object { $_ }) + @(@($answer['custom']) | Where-Object { $_ })
-        $label = if ($question) { $question['question'] } else { $answer['id'] }
-        "$label → $($values -join ', ')"
+        if ($question) { Format-Choice $question['header'] $question['question'] ($values -join ', ') }
+        else { Format-Choice $null $answer['id'] ($values -join ', ') }
     }
     @($lines) -join "`n"
 }
@@ -791,7 +803,7 @@ function Get-DshEvents {
                     $kind = if ($text -cmatch '(?:^|\s)/chat-sync(?=\s|$)') { 'sync' } elseif ($steered.ContainsKey([string]$d['id'])) { 'queued' } else { 'prompt' }
                     if ($images -gt 0) {
                         $placeholder = (@('[图片]') * $images) -join ' '
-                        $text = if ($text) { "$placeholder`n$text" } else { $placeholder }
+                        $text = if ($text) { "$placeholder $text" } else { $placeholder }
                     }
                     if ($text.Trim() -or $kind -eq 'sync') { & $add $kind $text }
                 }
@@ -835,7 +847,7 @@ function Get-DshEvents {
 # ---------------------------------------------------------------- 组装轮次
 
 $TopLevelKinds = 'prompt', 'command', 'sync'
-$UnitKinds = 'prompt', 'queued', 'choice', 'command', 'interrupt'
+$UnitKinds = 'prompt', 'queued', 'command'
 
 function Format-Time {
     param($Value)
@@ -873,6 +885,22 @@ function Build-Units {
     $skipping = $false
     $syncPrev = $null
     $orphans = 0
+    $open = {
+        param([string] $Kind, [string] $Text, $Time)
+        $unit = [ordered]@{
+            id          = $units.Count + 1
+            kind        = $Kind
+            time        = Format-Time $Time
+            user        = $Text
+            ai          = ''
+            choices     = [Collections.Generic.List[string]]::new()
+            interrupted = $false
+            files       = [Collections.Generic.List[string]]::new()
+            redacted    = 0
+        }
+        $units.Add($unit)
+        $unit
+    }
     foreach ($ev in $Events) {
         if ($ev.Kind -in $TopLevelKinds) {
             # 同步命令那一轮整轮跳过，直到下一条顶层输入
@@ -884,16 +912,15 @@ function Build-Units {
         }
         if ($skipping) { continue }
         if ($ev.Kind -in $UnitKinds) {
-            $current = [ordered]@{
-                id       = $units.Count + 1
-                kind     = $ev.Kind
-                time     = Format-Time $ev.Time
-                user     = $ev.Text
-                ai       = ''
-                files    = [Collections.Generic.List[string]]::new()
-                redacted = 0
-            }
-            $units.Add($current)
+            $current = & $open $ev.Kind $ev.Text $ev.Time
+        }
+        elseif ($ev.Kind -eq 'choice') {
+            # 选择并入所在的那一条；前面没有输入时单独成一条
+            if ($null -eq $current) { $current = & $open 'choice' '' $ev.Time }
+            foreach ($line in ($ev.Text -split "`n")) { if ($line) { $current.choices.Add($line) } }
+        }
+        elseif ($ev.Kind -eq 'interrupt') {
+            if ($current) { $current.interrupted = $true }
         }
         elseif ($null -eq $current) {
             $orphans++
@@ -1084,52 +1111,80 @@ function Split-HeadingPath {
 
 # ---------------------------------------------------------------- 渲染
 
-$Labels = @{ prompt = '**我**'; queued = '**我（插话）**'; choice = '**我（选择）**'; command = '**我（命令）**' }
+$Labels = @{ prompt = '**问**'; queued = '**插话**'; command = '**命令**'; choice = '**选择**' }
+$RecordTitle = '**对话记录**（问为原文，答为压缩后的回复）'
+
+function Get-LastItemNumber {
+    # 章节里上一条问答的编号，没有就是 0；新内容接着往下编
+    param([Collections.Generic.List[string]] $Lines, [int] $From, [int] $To)
+    $mask = Get-FenceMask $Lines
+    $last = 0
+    for ($i = $From; $i -lt $To; $i++) {
+        if (-not $mask[$i] -and $Lines[$i] -match '^(\d{1,9})\. \*\*(?:问|插话|命令|选择)\*\*：') { $last = [int]$Matches[1] }
+    }
+    $last
+}
 
 function Format-Block {
-    param($Units, $Summaries)
+    # 每轮渲染成一条编号问答：N. **问**：原话 / **答**：一段话 / **选择**：短标题＝「选项」；…
+    param($Units, $Summaries, [int] $Start)
     $lines = [Collections.Generic.List[string]]::new()
     $redactions = [Collections.Generic.List[string]]::new()
+    $number = $Start
     foreach ($unit in $Units) {
-        $id = [string]$unit['id']
-        $time = [string]$unit['time']
-        $stamp = if ($time) { " · $time" } else { '' }
-        if ($unit['kind'] -eq 'interrupt') {
-            $lines.Add("*[已中断]*$stamp")
+        $kind = [string]$unit['kind']
+        $label = $Labels[$kind]
+        $choices = @(@($unit['choices']) | Where-Object { $_ })
+        $paragraphs = [Collections.Generic.List[object]]::new()
+
+        if ($kind -eq 'choice') {
+            $paragraphs.Add(@("$label：$($choices -join '；')。"))
         }
         else {
-            $lines.Add("$($Labels[[string]$unit['kind']])$stamp")
-            $lines.Add('')
-            $user = [string]$unit['user']
-            # 围栏比原话里最长的反引号串再长一截，原话才能一字不改地放进去
-            $longest = 0
-            foreach ($run in [regex]::Matches($user, '`+')) { $longest = [Math]::Max($longest, $run.Length) }
-            $fence = '`' * [Math]::Max(3, $longest + 1)
-            $lines.Add("${fence}text")
-            foreach ($userLine in ($user -split '\r?\n')) { $lines.Add($userLine) }
-            $lines.Add($fence)
+            $user = ([string]$unit['user']).TrimEnd("`r", "`n")
+            if ($user -notmatch '\n') {
+                # 单行原话接在标签后面，不在行首，不会被当成标题或代码块
+                $paragraphs.Add(@("$label：$user"))
+            }
+            else {
+                # 多行原话放进代码块，围栏比原话里最长的反引号串再长一截，原话才能一字不改地放进去
+                $longest = 0
+                foreach ($run in [regex]::Matches($user, '`+')) { $longest = [Math]::Max($longest, $run.Length) }
+                $fence = '`' * [Math]::Max(3, $longest + 1)
+                $paragraphs.Add(@("$label："))
+                $paragraphs.Add(@("${fence}text") + @($user -split '\r?\n') + @($fence))
+            }
         }
-        $bullets = [Collections.Generic.List[string]]::new()
+
         $summaryRedacted = 0
-        foreach ($point in @($Summaries[$id])) {
-            if (-not $point) { continue }
-            $safe = Protect-Secret (([string]$point -replace '\s*\r?\n\s*', ' ').Trim())
-            $summaryRedacted += $safe.Count
-            $bullets.Add("- $($safe.Text)")
+        $answer = (@(@($Summaries[[string]$unit['id']]) | Where-Object { $_ }) -join ' ')
+        if ($answer) {
+            $safe = Protect-Secret (($answer -replace '\s*\r?\n\s*', ' ').Trim())
+            $summaryRedacted = $safe.Count
+            $answer = $safe.Text
         }
-        $files = @($unit['files'] | Where-Object { $_ })
-        if ($files.Count) { $bullets.Add('- 改动文件：' + (($files | ForEach-Object { "``$_``" }) -join '、')) }
-        if ($bullets.Count) {
-            $lines.Add('')
-            $lines.Add('**AI**')
-            $lines.Add('')
-            foreach ($bullet in $bullets) { $lines.Add($bullet) }
+        if ($unit['interrupted']) { $answer += '（已中断）' }
+        if ($answer) { $paragraphs.Add(@("**答**：$answer")) }
+        elseif ($kind -in 'prompt', 'queued') { $paragraphs.Add(@('**答**：（记录里没有回复）')) }
+        if ($kind -ne 'choice' -and $choices.Count) { $paragraphs.Add(@("**选择**：$($choices -join '；')。")) }
+
+        # 续行缩进到条目内容的起点（"N. " 的宽度），否则会掉出列表
+        $prefix = "$number. "
+        $pad = ' ' * $prefix.Length
+        for ($p = 0; $p -lt $paragraphs.Count; $p++) {
+            if ($p -gt 0) { $lines.Add('') }
+            $body = @($paragraphs[$p])
+            for ($k = 0; $k -lt $body.Count; $k++) {
+                $line = [string]$body[$k]
+                if ($p -eq 0 -and $k -eq 0) { $lines.Add("$prefix$line") }
+                elseif ($line) { $lines.Add("$pad$line") }
+                else { $lines.Add('') }
+            }
         }
-        $lines.Add('')
-        $lines.Add('---')
         $lines.Add('')
         $total = [int]$unit['redacted'] + $summaryRedacted
-        if ($total) { $redactions.Add("第 $id 轮（$time）$total 处") }
+        if ($total) { $redactions.Add("第 $number 条 $total 处") }
+        $number++
     }
     [pscustomobject]@{ Lines = $lines; Redactions = $redactions }
 }
@@ -1197,6 +1252,11 @@ function Invoke-Export {
         $unit.user = $user.Text
         $unit.ai = $ai.Text
         $unit.redacted = $user.Count + $ai.Count
+        for ($c = 0; $c -lt $unit.choices.Count; $c++) {
+            $choice = Protect-Secret $unit.choices[$c]
+            $unit.choices[$c] = $choice.Text
+            $unit.redacted += $choice.Count
+        }
     }
 
     if (-not $OutFile) {
@@ -1251,7 +1311,7 @@ function Invoke-Write {
         if ($raw -and $raw.Trim()) {
             try { $summaries = $raw | ConvertFrom-Json @JsonArgs }
             catch { Stop-Sync 1 "要点文件不是合法 JSON：$summaryPath" }
-            if ($summaries -isnot [Collections.IDictionary]) { Stop-Sync 1 "要点文件应是 {""轮次id"": [""要点"", ...]} 形式：$summaryPath" }
+            if ($summaries -isnot [Collections.IDictionary]) { Stop-Sync 1 "要点文件应是 {""轮次id"": ""一段话""} 形式：$summaryPath" }
         }
     }
     $missing = @($units | Where-Object {
@@ -1293,8 +1353,14 @@ function Invoke-Write {
     $h = (Resolve-Section $doc.Lines $segments).Heading
     $end = Get-SectionEnd (Get-Headings $doc.Lines) $h $doc.Lines.Count
 
-    $rendered = Format-Block $units $summaries
+    $last = Get-LastItemNumber $doc.Lines ($h.Index + 1) $end
+    $rendered = Format-Block $units $summaries ($last + 1)
     $block = [Collections.Generic.List[string]]::new()
+    # 章节里还没有问答时先写标题行，旧格式的记录和你自己的编号列表都不会与问答连成一个列表
+    if ($units.Count -and $last -eq 0) {
+        $block.Add($RecordTitle)
+        $block.Add('')
+    }
     foreach ($line in $rendered.Lines) { $block.Add($line) }
     $block.Add("<!-- chat-sync:${SyncHost}:${session}:$cursorTo -->")
     Add-BlockAt $doc.Lines ($h.Index + 1) $end $block
@@ -1305,14 +1371,20 @@ function Invoke-Write {
     }
     Save-Markdown $target $doc
 
-    $kinds = [ordered]@{ prompt = '原话'; queued = '插话'; choice = '选择'; command = '命令'; interrupt = '中断' }
-    $counts = foreach ($k in $kinds.Keys) {
+    $kinds = [ordered]@{ prompt = '问'; queued = '插话'; command = '命令' }
+    $counts = [Collections.Generic.List[string]]::new()
+    foreach ($k in $kinds.Keys) {
         $n = @($units | Where-Object { $_['kind'] -eq $k }).Count
-        if ($n) { "$($kinds[$k]) $n" }
+        if ($n) { $counts.Add("$($kinds[$k]) $n") }
     }
+    $choiceCount = @($units | ForEach-Object { @($_['choices']) } | Where-Object { $_ }).Count
+    if ($choiceCount) { $counts.Add("选择 $choiceCount 处") }
+    $interrupts = @($units | Where-Object { $_['interrupted'] }).Count
+    if ($interrupts) { $counts.Add("中断 $interrupts 处") }
+    $range = if ($units.Count) { "第 $($last + 1)～$($last + $units.Count) 条" } else { '' }
     Write-Output ("已写入：$target" + $(if ($createdFile) { '（新建文件）' } else { '' }))
     Write-Output ("章节：$($segments -join '/')" + $(if ($section.Created.Count) { "（新建标题：$($section.Created -join '/')）" } else { '' }))
-    Write-Output ("新增：$($units.Count) 轮" + $(if ($counts) { "（$(@($counts) -join '、')）" } else { '' }))
+    Write-Output ("新增：$($units.Count) 条" + $(if ($units.Count) { "（$range；$(@($counts) -join '、')）" } else { '' }))
     Write-Output ("打码：" + $(if ($rendered.Redactions.Count) { $rendered.Redactions -join '；' } else { '无' }))
 }
 

@@ -5,7 +5,7 @@
       "id": 0,
       "name": "正常-Claude Code 下导出、压缩、写入三步走完",
       "prompt": "/chat-sync D:\\notes\\工作日志.md 项目A/讨论记录",
-      "expected_output": "拆出文件 D:\\notes\\工作日志.md 和标题路径 项目A/讨论记录，用单引号传参运行 Sync-Chat.ps1 -Mode Export -SyncHost claude，并带上 -SessionId '${CLAUDE_SESSION_ID}'。读导出文件，只给 ai 不为空的轮次写要点：每轮 3–8 条（原文很短时可以更少），语言跟原文一致，不写代码块，不写改动文件清单，不补充 ai 原文没有的事实，不改也不抄 user 原话。要点以 {\"轮次id\": [..]} 的形式写到导出输出给出的要点文件。随后运行 -Mode Write，并转述脚本报告（文件、章节、新增轮数、新建的文件或标题、打码情况）。全程不直接编辑目标文件。"
+      "expected_output": "拆出文件 D:\\notes\\工作日志.md 和标题路径 项目A/讨论记录，用单引号传参运行 Sync-Chat.ps1 -Mode Export -SyncHost claude，并带上 -SessionId '${CLAUDE_SESSION_ID}'。读导出文件，只给 ai 不为空的轮次写「答」：每轮一段话、不分条，先说结论再补必要细节，语言跟原文一致，不写代码块，不复述 choices、不写已中断，不补充 ai 原文没有的事实，不改也不抄 user 原话。答以 {\"轮次id\": \"一段话\"} 的形式写到导出输出给出的要点文件。随后运行 -Mode Write，并转述脚本报告（文件、章节、新增条数和编号范围、新建的文件或标题、打码情况）。全程不直接编辑目标文件。"
     },
     {
       "id": 1,
@@ -42,6 +42,12 @@
       "name": "信息不足-DeepSeek Harness 下找不到 node",
       "prompt": "/chat-sync docs/会议.md 需求评审（在 DeepSeek Harness 里，本机 PATH 上没有 node）",
       "expected_output": "运行 Sync-Chat.ps1 -Mode Export -SyncHost dsh。脚本因为压缩记录需要 Node.js 22.15+ 解压而以退出码 2 结束，把这条错误原样告诉用户并停止，说明装好 Node.js 22.15 或更新版本后重试。不尝试自己解析或解压 .zstd 记录，不改用其他宿主的 -SyncHost，也不直接编辑目标文件。"
+    },
+    {
+      "id": 7,
+      "name": "正常-同一章节第二次同步，接着编号",
+      "prompt": "/chat-sync D:\\notes\\工作日志.md 项目A/讨论记录（这一节里已经有上次同步写的 1～12 条问答，这次又聊了 3 轮，其中一轮回答了两个选择题）",
+      "expected_output": "照常导出、写答、写入。三轮各写一段话的答，不把选择题的回答写进答里（脚本把它们并入那一条的「选择」行）。写入后的报告是新增 3 条、第 13～15 条，不再重复写「对话记录」标题行。不手工调整编号，也不改动前 12 条。"
     }
   ]
 }
